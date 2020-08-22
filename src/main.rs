@@ -41,8 +41,8 @@ impl MainState {
             self.keyboard.key(KeyboardKey::D).is_pressed()
         );
         self.controller_state.left_stick.y_axis.set_value_from_states(
-            self.keyboard.key(KeyboardKey::W).is_pressed(),
-            self.keyboard.key(KeyboardKey::S).is_pressed()
+            self.keyboard.key(KeyboardKey::S).is_pressed(),
+            self.keyboard.key(KeyboardKey::W).is_pressed()
         );
         self.controller_state.y_button.set_pressed(self.keyboard.key(KeyboardKey::LeftBracket).is_pressed());
         self.controller_state.convert_to_melee_values();
@@ -133,7 +133,7 @@ impl EventHandler for MainState {
         let character_pixel_width = 50.0;
         let character_pixel_height = 100.0;
         let character_pixel_x = self.fighting_game.player.x() * camera_zoom + camera_pixel_x - 0.5 * character_pixel_width;
-        let character_pixel_y = self.fighting_game.player.y() * camera_zoom + camera_pixel_y - character_pixel_height;
+        let character_pixel_y = -self.fighting_game.player.y() * camera_zoom + camera_pixel_y - character_pixel_height;
 
         let character = graphics::Mesh::new_rectangle(
             context,
