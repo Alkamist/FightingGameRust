@@ -209,8 +209,8 @@ impl Fighter {
 
 // State update logic.
 impl Fighter {
-    pub fn update(&mut self, input: ControllerState) {
-        self.input = input;
+    pub fn update(&mut self, input: &ControllerState) {
+        self.input.copy_inputs(&input);
 
         self.was_facing_right = self.is_facing_right;
         self.x_previous = self.x;
@@ -249,6 +249,7 @@ impl Fighter {
         }
 
         self.state_frame += 1;
+        self.input.update();
 
         // Extremely basic ground collision logic for now.
         if self.y < 0.0 {

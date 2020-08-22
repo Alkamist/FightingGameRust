@@ -56,6 +56,25 @@ impl ControllerState {
         self.d_up_button.update();
     }
 
+    pub fn copy_inputs(&mut self, from_controller: &ControllerState) {
+        self.left_stick.x_axis.set_value(from_controller.left_stick.x_axis.value());
+        self.left_stick.y_axis.set_value(from_controller.left_stick.y_axis.value());
+        self.c_stick.x_axis.set_value(from_controller.c_stick.x_axis.value());
+        self.c_stick.y_axis.set_value(from_controller.c_stick.y_axis.value());
+        self.a_button.set_pressed(from_controller.a_button.is_pressed());
+        self.b_button.set_pressed(from_controller.b_button.is_pressed());
+        self.x_button.set_pressed(from_controller.x_button.is_pressed());
+        self.y_button.set_pressed(from_controller.y_button.is_pressed());
+        self.z_button.set_pressed(from_controller.z_button.is_pressed());
+        self.r_button.set_pressed(from_controller.r_button.is_pressed());
+        self.l_button.set_pressed(from_controller.l_button.is_pressed());
+        self.start_button.set_pressed(from_controller.start_button.is_pressed());
+        self.d_left_button.set_pressed(from_controller.d_left_button.is_pressed());
+        self.d_right_button.set_pressed(from_controller.d_right_button.is_pressed());
+        self.d_down_button.set_pressed(from_controller.d_down_button.is_pressed());
+        self.d_up_button.set_pressed(from_controller.d_up_button.is_pressed());
+    }
+
     pub fn convert_to_melee_values(&mut self) {
         self.left_stick.convert_to_melee_values();
         self.c_stick.convert_to_melee_values();

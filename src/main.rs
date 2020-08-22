@@ -22,8 +22,6 @@ struct MainState {
     fixed_timestep: FixedTimestep,
     fighting_game: FightingGame,
     controller_state: ControllerState,
-    is_paused: bool,
-    frame_advance: bool,
 }
 
 impl MainState {
@@ -33,8 +31,6 @@ impl MainState {
             fixed_timestep: FixedTimestep::new(60.0),
             fighting_game: FightingGame::new(),
             controller_state: ControllerState::new(0.2875),
-            is_paused: false,
-            frame_advance: false,
         };
         Ok(s)
     }
@@ -121,28 +117,11 @@ impl EventHandler for MainState {
     fn update(&mut self, context: &mut Context) -> GameResult {
         self.update_game_input_with_keyboard();
 
-        if self.controller_state.start_button.just_pressed() {
-            self.is_paused = !self.is_paused;
-        }
-        if self.is_paused && self.controller_state.z_button.just_pressed() {
-            self.frame_advance = true;
-        }
-
-        let update_game = !self.is_paused || self.frame_advance;
-        let mut did_frame_advance = false;
-
         let fighting_game = &mut self.fighting_game;
         let controller_state = &mut self.controller_state;
         self.fixed_timestep.update(timer::delta(context), || {
-            if update_game {
-                fighting_game.update(controller_state);
-                did_frame_advance = true;
-            }
+            fighting_game.update(controller_state);
         });
-
-        if did_frame_advance {
-            self.frame_advance = false;
-        }
 
         self.controller_state.update();
         self.keyboard.update();
