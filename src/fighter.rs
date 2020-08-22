@@ -8,6 +8,9 @@ pub enum FighterState {
     Turn,
     Walk,
     Dash,
+    Run,
+    RunBrake,
+    RunTurn,
     JumpSquat,
     Airborne,
     Land,
@@ -66,7 +69,11 @@ pub struct Fighter {
 
     input: ControllerState,
 
-    reset_dash_velocity: bool
+    dash_should_reset_velocity: bool,
+    run_turn_melee_frame: u32,
+    run_turn_was_facing_right_initially: bool,
+    run_turn_has_changed_direction: bool,
+    run_turn_has_fully_turned: bool
 }
 
 // Character builders.
@@ -116,29 +123,17 @@ impl Fighter {
             state_previous: FighterState::Idle,
             state_frame: 0,
             input: ControllerState::new(0.2875),
-            reset_dash_velocity: false
+            dash_should_reset_velocity: false,
+            run_turn_melee_frame: 0,
+            run_turn_was_facing_right_initially: true,
+            run_turn_has_changed_direction: false,
+            run_turn_has_fully_turned: false
         }
     }
 }
 
 // Helper methods.
 impl Fighter {
-    pub fn x_axis(&self) -> &AnalogAxis { &self.input.left_stick.x_axis }
-    pub fn y_axis(&self) -> &AnalogAxis { &self.input.left_stick.y_axis }
-    fn c_x_axis(&self) -> &AnalogAxis { &self.input.c_stick.x_axis }
-    fn c_y_axis(&self) -> &AnalogAxis { &self.input.c_stick.y_axis }
-    fn a_button(&self) -> &Button { &self.input.a_button }
-    fn b_button(&self) -> &Button { &self.input.b_button }
-    fn x_button(&self) -> &Button { &self.input.x_button }
-    fn y_button(&self) -> &Button { &self.input.y_button }
-    fn z_button(&self) -> &Button { &self.input.z_button }
-    fn r_button(&self) -> &Button { &self.input.r_button }
-    fn l_button(&self) -> &Button { &self.input.l_button }
-    fn start_button(&self) -> &Button { &self.input.start_button }
-    fn d_left_button(&self) -> &Button { &self.input.d_left_button }
-    fn d_right_button(&self) -> &Button { &self.input.d_right_button }
-    fn d_down_button(&self) -> &Button { &self.input.d_down_button }
-    fn d_up_button(&self) -> &Button { &self.input.d_up_button }
     fn should_jump(&self) -> bool { self.x_button().just_pressed() || self.y_button().just_pressed() }
     fn jump_is_active(&self) -> bool { self.x_button().is_pressed() || self.y_button().is_pressed() }
     fn x_axis_is_forward(&self) -> bool {
@@ -157,6 +152,23 @@ impl Fighter {
     pub fn x_velocity(&self) -> f32 { self.x_velocity }
     pub fn y_velocity(&self) -> f32 { self.y_velocity }
 
+    pub fn x_axis(&self) -> &AnalogAxis { &self.input.left_stick.x_axis }
+    pub fn y_axis(&self) -> &AnalogAxis { &self.input.left_stick.y_axis }
+    pub fn c_x_axis(&self) -> &AnalogAxis { &self.input.c_stick.x_axis }
+    pub fn c_y_axis(&self) -> &AnalogAxis { &self.input.c_stick.y_axis }
+    pub fn a_button(&self) -> &Button { &self.input.a_button }
+    pub fn b_button(&self) -> &Button { &self.input.b_button }
+    pub fn x_button(&self) -> &Button { &self.input.x_button }
+    pub fn y_button(&self) -> &Button { &self.input.y_button }
+    pub fn z_button(&self) -> &Button { &self.input.z_button }
+    pub fn r_button(&self) -> &Button { &self.input.r_button }
+    pub fn l_button(&self) -> &Button { &self.input.l_button }
+    pub fn start_button(&self) -> &Button { &self.input.start_button }
+    pub fn d_left_button(&self) -> &Button { &self.input.d_left_button }
+    pub fn d_right_button(&self) -> &Button { &self.input.d_right_button }
+    pub fn d_down_button(&self) -> &Button { &self.input.d_down_button }
+    pub fn d_up_button(&self) -> &Button { &self.input.d_up_button }
+
     pub fn state_frame(&self) -> u32 { self.state_frame }
     pub fn state(&self) -> FighterState { self.state }
     pub fn set_state(&mut self, new_state: FighterState) {
@@ -173,6 +185,9 @@ impl Fighter {
             FighterState::Turn => String::from("Turn"),
             FighterState::Walk => String::from("Walk"),
             FighterState::Dash => String::from("Dash"),
+            FighterState::Run => String::from("Run"),
+            FighterState::RunBrake => String::from("RunBrake"),
+            FighterState::RunTurn => String::from("RunTurn"),
             FighterState::JumpSquat => String::from("JumpSquat"),
             FighterState::Airborne => String::from("Airborne"),
             FighterState::Land => String::from("Land"),
@@ -202,6 +217,9 @@ impl Fighter {
             FighterState::Turn => self.state_turn_transition(),
             FighterState::Walk => self.state_walk_transition(),
             FighterState::Dash => self.state_dash_transition(),
+            FighterState::Run => self.state_run_transition(),
+            FighterState::RunBrake => self.state_run_brake_transition(),
+            FighterState::RunTurn => self.state_run_turn_transition(),
             FighterState::JumpSquat => self.state_jump_squat_transition(),
             FighterState::Airborne => self.state_airborne_transition(),
             FighterState::Land => self.state_land_transition(),
@@ -213,6 +231,9 @@ impl Fighter {
             FighterState::Turn => self.state_turn_update(),
             FighterState::Walk => self.state_walk_update(),
             FighterState::Dash => self.state_dash_update(),
+            FighterState::Run => self.state_run_update(),
+            FighterState::RunBrake => self.state_run_brake_update(),
+            FighterState::RunTurn => self.state_run_turn_update(),
             FighterState::JumpSquat => self.state_jump_squat_update(),
             FighterState::Airborne => self.state_airborne_update(),
             FighterState::Land => self.state_land_update(),
@@ -291,16 +312,25 @@ impl Fighter {
     }
 }
 
+
+// ============ STATES ============
+
+
 // Idle.
 impl Fighter {
     fn state_idle_transition(&mut self) {
         if self.should_jump() {
             self.set_state(FighterState::JumpSquat);
-        } else if self.x_axis_is_forward() && self.x_axis_smashed() {
+        }
+        else if self.x_axis_is_forward()
+             && self.x_axis_smashed() {
             self.set_state(FighterState::Dash);
-        } else if self.x_axis_is_forward() && !self.x_axis_smashed() {
+        }
+        else if self.x_axis_is_forward()
+             && !self.x_axis_smashed() {
             self.set_state(FighterState::Walk);
-        } else if self.x_axis_is_backward() {
+        }
+        else if self.x_axis_is_backward() {
             self.set_state(FighterState::Turn);
         }
     }
@@ -316,11 +346,16 @@ impl Fighter {
     fn state_turn_transition(&mut self) {
         if self.should_jump() {
             self.set_state(FighterState::JumpSquat);
-        } else if self.x_axis_is_backward() && self.x_axis_smashed() {
+        }
+        else if self.x_axis_is_backward()
+             && self.x_axis_smashed() {
             self.set_state(FighterState::Dash);
-        } else if self.x_axis_is_forward() && self.state_frame >= self.turn_frames {
+        }
+        else if self.x_axis_is_forward()
+             && self.state_frame >= self.turn_frames {
             self.set_state(FighterState::Walk);
-        } else if self.state_frame >= self.turn_frames {
+        }
+        else if self.state_frame >= self.turn_frames {
             self.set_state(FighterState::Idle);
         }
     }
@@ -353,9 +388,12 @@ impl Fighter {
     fn state_walk_transition(&mut self) {
         if self.should_jump() {
             self.set_state(FighterState::JumpSquat);
-        } else if self.x_axis_is_forward() && self.x_axis_smashed() {
+        }
+        else if self.x_axis_is_forward()
+             && self.x_axis_smashed() {
             self.set_state(FighterState::Dash);
-        } else if !self.x_axis_is_forward() {
+        }
+        else if !self.x_axis_is_forward() {
             self.set_state(FighterState::Idle);
         }
     }
@@ -394,11 +432,21 @@ impl Fighter {
     fn state_dash_transition(&mut self) {
         if self.should_jump() {
             self.set_state(FighterState::JumpSquat);
-        } else if self.x_axis_is_forward() && self.state_frame >= self.dash_max_frames {
+        }
+        else if self.x_axis_is_forward()
+             && self.state_frame >= self.dash_max_frames {
             self.set_state(FighterState::Dash);
-        } else if !self.x_axis().is_active() && self.state_frame >= self.dash_max_frames {
+        }
+        else if self.x_axis_is_forward()
+             && self.state_frame >= self.dash_min_frames
+             && self.state_frame < self.dash_max_frames {
+            self.set_state(FighterState::Run);
+        }
+        else if !self.x_axis().is_active()
+             && self.state_frame >= self.dash_max_frames {
             self.set_state(FighterState::Idle);
-        } else if self.x_axis_is_backward() {
+        }
+        else if self.x_axis_is_backward() {
             self.set_state(FighterState::Turn);
         }
     }
@@ -407,15 +455,15 @@ impl Fighter {
         if self.state_frame == 0 {
             match self.state_previous {
                 FighterState::Turn => { self.is_facing_right = !self.is_facing_right; },
-                FighterState::Dash => { self.reset_dash_velocity = true; },
+                FighterState::Dash => { self.dash_should_reset_velocity = true; },
                 _ => ()
             }
         }
 
         if self.state_frame == 1 {
-            if self.reset_dash_velocity {
+            if self.dash_should_reset_velocity {
                 self.x_velocity = 0.0;
-                self.reset_dash_velocity = false;
+                self.dash_should_reset_velocity = false;
             }
 
             self.x_velocity += self.dash_start_velocity * self.facing_direction();
@@ -438,6 +486,115 @@ impl Fighter {
             }
         }
         self.move_with_velocity();
+    }
+}
+
+// Run.
+impl Fighter {
+    fn state_run_transition(&mut self) {
+        if self.should_jump() {
+            self.set_state(FighterState::JumpSquat);
+        }
+        else if !self.x_axis().is_active() {
+            self.set_state(FighterState::RunBrake);
+        }
+        else if self.x_axis_is_backward() {
+            self.set_state(FighterState::RunTurn);
+        }
+    }
+
+    fn state_run_update(&mut self) {
+        let run_acceleration = ((self.dash_max_velocity * self.x_axis().value()) - self.x_velocity)
+                             * (1.0 / (2.5 * self.dash_max_velocity))
+                             * (self.dash_axis_acceleration + (self.dash_base_acceleration / self.x_axis().magnitude()));
+        self.x_velocity += run_acceleration;
+        self.move_with_velocity();
+    }
+}
+
+// RunBrake.
+impl Fighter {
+    fn state_run_brake_transition(&mut self) {
+        if self.should_jump() {
+            self.set_state(FighterState::JumpSquat);
+        }
+        else if self.x_axis_is_backward()
+             && self.state_frame >= self.run_brake_frames {
+            self.set_state(FighterState::Turn);
+        }
+        else if self.x_axis_is_backward()
+             && self.state_frame < self.run_brake_frames {
+            self.set_state(FighterState::RunTurn);
+        }
+        else if !self.x_axis().is_active()
+             && self.state_frame >= self.run_brake_frames {
+            self.set_state(FighterState::Idle);
+        }
+    }
+
+    fn state_run_brake_update(&mut self) {
+        self.x_velocity = self.apply_friction(self.x_velocity, self.ground_friction);
+        self.move_with_velocity();
+    }
+}
+
+// RunTurn.
+impl Fighter {
+    fn state_run_turn_transition(&mut self) {
+        if self.should_jump() {
+            self.set_state(FighterState::JumpSquat);
+        }
+        else if self.x_axis_is_forward()
+             && self.run_turn_melee_frame >= 20 {
+            self.set_state(FighterState::Run);
+        }
+        else if self.x_axis_is_backward()
+             && self.run_turn_melee_frame >= 20 {
+            self.set_state(FighterState::Turn);
+        }
+        else if !self.x_axis().is_active()
+             && self.run_turn_melee_frame >= 20 {
+            self.set_state(FighterState::Idle);
+        }
+    }
+
+    fn state_run_turn_update(&mut self) {
+        if self.state_frame == 0 {
+            self.run_turn_melee_frame = 0;
+            self.run_turn_was_facing_right_initially = self.is_facing_right;
+            self.run_turn_has_changed_direction = false;
+            self.run_turn_has_fully_turned = false;
+        }
+
+        if self.run_turn_was_facing_right_initially && self.x_velocity <= 0.0
+        || !self.run_turn_was_facing_right_initially && self.x_velocity >= 0.0 {
+            self.run_turn_has_fully_turned = true;
+        }
+
+        if !self.run_turn_has_changed_direction && self.run_turn_has_fully_turned {
+            self.is_facing_right = !self.is_facing_right;
+            self.run_turn_has_changed_direction = true;
+        }
+
+        if !self.x_axis().is_active()
+        || (!self.run_turn_has_fully_turned && self.x_axis_is_forward())
+        || (self.run_turn_has_fully_turned && self.x_axis_is_backward()) {
+            self.x_velocity = self.apply_friction(self.x_velocity, self.ground_friction);
+        }
+        else {
+            self.x_velocity = self.apply_acceleration(self.x_velocity,
+                                                      self.x_axis(),
+                                                      self.dash_base_acceleration,
+                                                      self.dash_axis_acceleration,
+                                                      self.dash_max_velocity,
+                                                      self.ground_friction);
+        }
+
+        self.move_with_velocity();
+
+        if self.run_turn_has_fully_turned || (self.run_turn_melee_frame < 9 && !self.run_turn_has_fully_turned) {
+            self.run_turn_melee_frame += 1;
+        }
     }
 }
 
