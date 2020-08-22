@@ -111,6 +111,8 @@ pub enum KeyboardKey {
     Numpad8,
     Numpad9,
 
+    LeftBracket,
+
     Unknown
 }
 
@@ -190,6 +192,8 @@ pub fn keyboard_key_from_ggez_key_code(key_code: KeyCode) -> KeyboardKey {
         KeyCode::Numpad8 => KeyboardKey::Numpad8,
         KeyCode::Numpad9 => KeyboardKey::Numpad9,
 
+        KeyCode::LBracket => KeyboardKey::LeftBracket,
+
         _ => KeyboardKey::Unknown
 
         //KeyCode::Escape => KeyboardKey::B,
@@ -232,7 +236,6 @@ pub fn keyboard_key_from_ggez_key_code(key_code: KeyCode) -> KeyboardKey {
         //KeyCode::Kana => KeyboardKey::B,
         //KeyCode::Kanji => KeyboardKey::B,
         //KeyCode::LAlt => KeyboardKey::B,
-        //KeyCode::LBracket => KeyboardKey::B,
         //KeyCode::LControl => KeyboardKey::B,
         //KeyCode::LShift => KeyboardKey::B,
         //KeyCode::LWin => KeyboardKey::B,

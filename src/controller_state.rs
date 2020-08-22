@@ -55,4 +55,9 @@ impl ControllerState {
         self.d_down_button.update();
         self.d_up_button.update();
     }
+
+    pub fn convert_to_melee_values(&mut self) {
+        self.left_stick.convert_to_melee_values();
+        self.c_stick.convert_to_melee_values();
+    }
 }

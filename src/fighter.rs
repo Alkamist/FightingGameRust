@@ -2,7 +2,7 @@ use crate::controller_state::ControllerState;
 use crate::button::Button;
 use crate::analog_axis::AnalogAxis;
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Copy, Clone)]
 pub enum FighterState {
     Idle,
     Turn,
@@ -119,8 +119,8 @@ impl Fighter {
 
 // Helper methods.
 impl Fighter {
-    fn x_axis(&self) -> &AnalogAxis { &self.input.left_stick.x_axis }
-    fn y_axis(&self) -> &AnalogAxis { &self.input.left_stick.y_axis }
+    pub fn x_axis(&self) -> &AnalogAxis { &self.input.left_stick.x_axis }
+    pub fn y_axis(&self) -> &AnalogAxis { &self.input.left_stick.y_axis }
     fn c_x_axis(&self) -> &AnalogAxis { &self.input.c_stick.x_axis }
     fn c_y_axis(&self) -> &AnalogAxis { &self.input.c_stick.y_axis }
     fn a_button(&self) -> &Button { &self.input.a_button }
@@ -150,6 +150,11 @@ impl Fighter {
 impl Fighter {
     pub fn x(&self) -> f32 { self.x }
     pub fn y(&self) -> f32 { self.y }
+    pub fn x_velocity(&self) -> f32 { self.x_velocity }
+    pub fn y_velocity(&self) -> f32 { self.y_velocity }
+
+    pub fn state_frame(&self) -> u32 { self.state_frame }
+    pub fn state(&self) -> FighterState { self.state }
     pub fn set_state(&mut self, new_state: FighterState) {
         self.state_frame = 0;
         self.state_previous = self.state;
@@ -157,6 +162,14 @@ impl Fighter {
     }
     pub fn facing_direction(&self) -> f32 { if self.is_facing_right { 1.0 } else { -1.0 } }
     pub fn just_turned(&self) -> bool { self.is_facing_right != self.was_facing_right }
+
+    pub fn state_as_string(&self) -> String {
+        match self.state {
+            FighterState::Idle => String::from("Idle"),
+            FighterState::Turn => String::from("Turn"),
+            FighterState::Dash => String::from("Dash")
+        }
+    }
 }
 
 // State update logic.
