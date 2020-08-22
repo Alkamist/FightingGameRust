@@ -45,6 +45,7 @@ impl MainState {
             self.keyboard.key(KeyboardKey::W).is_pressed()
         );
         self.controller_state.y_button.set_pressed(self.keyboard.key(KeyboardKey::LeftBracket).is_pressed());
+        self.controller_state.l_button.set_pressed(self.keyboard.key(KeyboardKey::Semicolon).is_pressed());
         self.controller_state.convert_to_melee_values();
     }
 

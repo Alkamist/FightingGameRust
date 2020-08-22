@@ -13,7 +13,9 @@ pub enum FighterState {
     RunTurn,
     JumpSquat,
     Airborne,
+    AirDodge,
     Land,
+    LandSpecial,
 }
 
 pub struct Fighter {
@@ -190,13 +192,16 @@ impl Fighter {
             FighterState::RunTurn => String::from("RunTurn"),
             FighterState::JumpSquat => String::from("JumpSquat"),
             FighterState::Airborne => String::from("Airborne"),
+            FighterState::AirDodge => String::from("AirDodge"),
             FighterState::Land => String::from("Land"),
+            FighterState::LandSpecial => String::from("LandSpecial"),
         }
     }
 
     pub fn land(&mut self) {
         match self.state {
             FighterState::Airborne => self.set_state(FighterState::Land),
+            FighterState::AirDodge => self.set_state(FighterState::LandSpecial),
             _ => ()
         }
     }
@@ -222,7 +227,9 @@ impl Fighter {
             FighterState::RunTurn => self.state_run_turn_transition(),
             FighterState::JumpSquat => self.state_jump_squat_transition(),
             FighterState::Airborne => self.state_airborne_transition(),
+            FighterState::AirDodge => self.state_air_dodge_transition(),
             FighterState::Land => self.state_land_transition(),
+            FighterState::LandSpecial => self.state_land_special_transition(),
         }
 
         // Handle state update.
@@ -236,7 +243,9 @@ impl Fighter {
             FighterState::RunTurn => self.state_run_turn_update(),
             FighterState::JumpSquat => self.state_jump_squat_update(),
             FighterState::Airborne => self.state_airborne_update(),
+            FighterState::AirDodge => self.state_air_dodge_update(),
             FighterState::Land => self.state_land_update(),
+            FighterState::LandSpecial => self.state_land_special_update(),
         }
 
         self.state_frame += 1;
@@ -601,7 +610,11 @@ impl Fighter {
 // JumpSquat.
 impl Fighter {
     fn state_jump_squat_transition(&mut self) {
-        if self.state_frame >= self.jump_squat_frames {
+        if (self.l_button().is_pressed() || self.r_button().is_pressed())
+        && self.state_frame >= self.jump_squat_frames {
+            self.set_state(FighterState::AirDodge);
+        }
+        else if self.state_frame >= self.jump_squat_frames {
             self.set_state(FighterState::Airborne);
         }
     }
@@ -614,7 +627,11 @@ impl Fighter {
 
 // Airborne.
 impl Fighter {
-    fn state_airborne_transition(&mut self) {}
+    fn state_airborne_transition(&mut self) {
+        if self.l_button().just_pressed() || self.r_button().just_pressed() {
+            self.set_state(FighterState::AirDodge);
+        }
+    }
 
     fn state_airborne_update(&mut self) {
         if self.state_frame == 0 {
@@ -653,6 +670,36 @@ impl Fighter {
     }
 }
 
+// AirDodge.
+impl Fighter {
+    fn state_air_dodge_transition(&mut self) {}
+
+    fn state_air_dodge_update(&mut self) {
+        if self.state_frame == 0 {
+            if self.x_axis().is_active() || self.y_axis().is_active() {
+                let stick_angle = self.input.left_stick.angle();
+                self.x_velocity = 3.1 * stick_angle.cos();
+                self.y_velocity = 3.1 * stick_angle.sin();
+            }
+            else {
+                self.x_velocity = 0.0;
+                self.y_velocity = 0.0;
+            }
+        }
+
+        if self.state_frame < 30 {
+            self.x_velocity *= 0.9;
+            self.y_velocity *= 0.9;
+        }
+        else {
+            self.handle_horizontal_air_movement();
+            self.handle_fast_fall();
+            self.handle_gravity();
+        }
+        self.move_with_velocity();
+    }
+}
+
 // Land.
 impl Fighter {
     fn state_land_transition(&mut self) {
@@ -668,6 +715,44 @@ impl Fighter {
         }
 
         self.x_velocity = self.apply_friction(self.x_velocity, self.ground_friction * 2.0);
+        self.move_with_velocity();
+    }
+}
+
+// LandSpecial.
+impl Fighter {
+    fn state_land_special_transition(&mut self) {
+        if self.should_jump() && self.state_frame >= 9 {
+            self.set_state(FighterState::JumpSquat);
+        }
+        else if self.x_axis_is_forward()
+             && self.x_axis_smashed()
+             && self.state_frame >= 9 {
+            self.set_state(FighterState::Dash);
+        }
+        else if self.x_axis_is_forward()
+             && !self.x_axis_smashed()
+             && self.state_frame >= 9 {
+            self.set_state(FighterState::Walk);
+        }
+        else if self.x_axis_is_backward()
+             && self.state_frame >= 9 {
+            self.set_state(FighterState::Turn);
+        }
+        else if !self.x_axis().is_active()
+             && self.state_frame >= 9 {
+            self.set_state(FighterState::Idle);
+        }
+    }
+
+    fn state_land_special_update(&mut self) {
+        if self.state_frame == 0 {
+            self.y_velocity = 0.0;
+            self.air_jumps_left = self.air_jumps;
+        }
+
+        let friction_multiplier = if self.state_frame < 3 { 2.0 } else { 1.0 };
+        self.x_velocity = self.apply_friction(self.x_velocity, self.ground_friction * friction_multiplier);
         self.move_with_velocity();
     }
 }

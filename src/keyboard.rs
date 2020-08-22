@@ -112,6 +112,7 @@ pub enum KeyboardKey {
     Numpad9,
 
     LeftBracket,
+    Semicolon,
 
     Unknown
 }
@@ -193,6 +194,7 @@ pub fn keyboard_key_from_ggez_key_code(key_code: KeyCode) -> KeyboardKey {
         KeyCode::Numpad9 => KeyboardKey::Numpad9,
 
         KeyCode::LBracket => KeyboardKey::LeftBracket,
+        KeyCode::Semicolon => KeyboardKey::Semicolon,
 
         _ => KeyboardKey::Unknown
 
@@ -263,7 +265,6 @@ pub fn keyboard_key_from_ggez_key_code(key_code: KeyCode) -> KeyboardKey {
         //KeyCode::RControl => KeyboardKey::B,
         //KeyCode::RShift => KeyboardKey::B,
         //KeyCode::RWin => KeyboardKey::B,
-        //KeyCode::Semicolon => KeyboardKey::B,
         //KeyCode::Slash => KeyboardKey::B,
         //KeyCode::Sleep => KeyboardKey::B,
         //KeyCode::Stop => KeyboardKey::B,
