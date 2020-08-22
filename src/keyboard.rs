@@ -111,8 +111,14 @@ pub enum KeyboardKey {
     Numpad8,
     Numpad9,
 
-    LeftBracket,
     Semicolon,
+    LeftBracket,
+    RightBracket,
+    Backslash,
+    Minus,
+    Equals,
+    Apostrophe,
+    Slash,
 
     Unknown
 }
@@ -193,8 +199,14 @@ pub fn keyboard_key_from_ggez_key_code(key_code: KeyCode) -> KeyboardKey {
         KeyCode::Numpad8 => KeyboardKey::Numpad8,
         KeyCode::Numpad9 => KeyboardKey::Numpad9,
 
-        KeyCode::LBracket => KeyboardKey::LeftBracket,
         KeyCode::Semicolon => KeyboardKey::Semicolon,
+        KeyCode::LBracket => KeyboardKey::LeftBracket,
+        KeyCode::RBracket => KeyboardKey::RightBracket,
+        KeyCode::Backslash => KeyboardKey::Backslash,
+        KeyCode::Minus => KeyboardKey::Minus,
+        KeyCode::Equals => KeyboardKey::Equals,
+        KeyCode::Apostrophe => KeyboardKey::Apostrophe,
+        KeyCode::Slash => KeyboardKey::Slash,
 
         _ => KeyboardKey::Unknown
 
@@ -221,11 +233,9 @@ pub fn keyboard_key_from_ggez_key_code(key_code: KeyCode) -> KeyboardKey {
         //KeyCode::AbntC1 => KeyboardKey::B,
         //KeyCode::AbntC2 => KeyboardKey::B,
         //KeyCode::Add => KeyboardKey::B,
-        //KeyCode::Apostrophe => KeyboardKey::B,
         //KeyCode::Apps => KeyboardKey::B,
         //KeyCode::At => KeyboardKey::B,
         //KeyCode::Ax => KeyboardKey::B,
-        //KeyCode::Backslash => KeyboardKey::B,
         //KeyCode::Calculator => KeyboardKey::B,
         //KeyCode::Capital => KeyboardKey::B,
         //KeyCode::Colon => KeyboardKey::B,
@@ -233,7 +243,6 @@ pub fn keyboard_key_from_ggez_key_code(key_code: KeyCode) -> KeyboardKey {
         //KeyCode::Convert => KeyboardKey::B,
         //KeyCode::Decimal => KeyboardKey::B,
         //KeyCode::Divide => KeyboardKey::B,
-        //KeyCode::Equals => KeyboardKey::B,
         //KeyCode::Grave => KeyboardKey::B,
         //KeyCode::Kana => KeyboardKey::B,
         //KeyCode::Kanji => KeyboardKey::B,
@@ -244,7 +253,6 @@ pub fn keyboard_key_from_ggez_key_code(key_code: KeyCode) -> KeyboardKey {
         //KeyCode::Mail => KeyboardKey::B,
         //KeyCode::MediaSelect => KeyboardKey::B,
         //KeyCode::MediaStop => KeyboardKey::B,
-        //KeyCode::Minus => KeyboardKey::B,
         //KeyCode::Multiply => KeyboardKey::B,
         //KeyCode::Mute => KeyboardKey::B,
         //KeyCode::MyComputer => KeyboardKey::B,
@@ -261,11 +269,9 @@ pub fn keyboard_key_from_ggez_key_code(key_code: KeyCode) -> KeyboardKey {
         //KeyCode::Power => KeyboardKey::B,
         //KeyCode::PrevTrack => KeyboardKey::B,
         //KeyCode::RAlt => KeyboardKey::B,
-        //KeyCode::RBracket => KeyboardKey::B,
         //KeyCode::RControl => KeyboardKey::B,
         //KeyCode::RShift => KeyboardKey::B,
         //KeyCode::RWin => KeyboardKey::B,
-        //KeyCode::Slash => KeyboardKey::B,
         //KeyCode::Sleep => KeyboardKey::B,
         //KeyCode::Stop => KeyboardKey::B,
         //KeyCode::Subtract => KeyboardKey::B,

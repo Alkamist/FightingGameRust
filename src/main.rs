@@ -22,6 +22,8 @@ struct MainState {
     fixed_timestep: FixedTimestep,
     fighting_game: FightingGame,
     controller_state: ControllerState,
+    is_paused: bool,
+    frame_advance: bool,
 }
 
 impl MainState {
@@ -31,6 +33,8 @@ impl MainState {
             fixed_timestep: FixedTimestep::new(60.0),
             fighting_game: FightingGame::new(),
             controller_state: ControllerState::new(0.2875),
+            is_paused: false,
+            frame_advance: false,
         };
         Ok(s)
     }
@@ -44,8 +48,15 @@ impl MainState {
             self.keyboard.key(KeyboardKey::S).is_pressed(),
             self.keyboard.key(KeyboardKey::W).is_pressed()
         );
+
+        self.controller_state.x_button.set_pressed(self.keyboard.key(KeyboardKey::Backslash).is_pressed());
         self.controller_state.y_button.set_pressed(self.keyboard.key(KeyboardKey::LeftBracket).is_pressed());
+        self.controller_state.z_button.set_pressed(self.keyboard.key(KeyboardKey::Equals).is_pressed());
         self.controller_state.l_button.set_pressed(self.keyboard.key(KeyboardKey::Semicolon).is_pressed());
+        self.controller_state.r_button.set_pressed(self.keyboard.key(KeyboardKey::RightBracket).is_pressed());
+
+        self.controller_state.start_button.set_pressed(self.keyboard.key(KeyboardKey::Key5).is_pressed());
+
         self.controller_state.convert_to_melee_values();
     }
 
@@ -89,7 +100,7 @@ impl MainState {
         graphics::queue_text(context, &y_velocity_text, na::Point2::new(debug_text_x - 200.0, debug_text_y - 25.0), None);
 
         let x_axis_text = Text::new(TextFragment {
-            text: format!("{:.4}", self.fighting_game.player.x_axis().value()),
+            text: format!("{:.4}", self.controller_state.left_stick.x_axis.value()),
             color: Some(Color::new(1.0, 1.0, 1.0, 1.0)),
             font: Some(Font::default()),
             scale: Some(Scale::uniform(30.0)),
@@ -97,7 +108,7 @@ impl MainState {
         graphics::queue_text(context, &x_axis_text, na::Point2::new(debug_text_x - 340.0, debug_text_y), None);
 
         let y_axis_text = Text::new(TextFragment {
-            text: format!("{:.4}", self.fighting_game.player.y_axis().value()),
+            text: format!("{:.4}", self.controller_state.left_stick.y_axis.value()),
             color: Some(Color::new(1.0, 1.0, 1.0, 1.0)),
             font: Some(Font::default()),
             scale: Some(Scale::uniform(30.0)),
@@ -110,9 +121,28 @@ impl EventHandler for MainState {
     fn update(&mut self, context: &mut Context) -> GameResult {
         self.update_game_input_with_keyboard();
 
+        if self.controller_state.start_button.just_pressed() {
+            self.is_paused = !self.is_paused;
+        }
+        if self.is_paused && self.controller_state.z_button.just_pressed() {
+            self.frame_advance = true;
+        }
+
+        let update_game = !self.is_paused || self.frame_advance;
+        let mut did_frame_advance = false;
+
         let fighting_game = &mut self.fighting_game;
         let controller_state = &mut self.controller_state;
-        self.fixed_timestep.update(timer::delta(context), || { fighting_game.update(controller_state); });
+        self.fixed_timestep.update(timer::delta(context), || {
+            if update_game {
+                fighting_game.update(controller_state);
+                did_frame_advance = true;
+            }
+        });
+
+        if did_frame_advance {
+            self.frame_advance = false;
+        }
 
         self.controller_state.update();
         self.keyboard.update();
