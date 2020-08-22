@@ -35,6 +35,8 @@ impl AnalogAxis {
     pub fn just_activated(&self) -> bool { self.just_crossed_center() || self.is_active() && !self.active_previous }
     pub fn just_deactivated(&self) -> bool { self.active_previous && !self.is_active() }
 
+    pub fn active_frames(&self) -> u32 { self.active_frames }
+
     pub fn set_value(&mut self, value: f32) { self.value_current = value; }
     pub fn set_value_from_states(&mut self, low: bool, high: bool) {
         if high && !low {
