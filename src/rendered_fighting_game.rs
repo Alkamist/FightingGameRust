@@ -14,6 +14,7 @@ pub struct RenderedFightingGame {
     camera_zoom: f32,
     character_position: InterpolatedPosition,
     debug_text: DebugText,
+    should_draw_debug_text: bool,
 }
 
 impl RenderedFightingGame {
@@ -25,16 +26,25 @@ impl RenderedFightingGame {
             camera_zoom: 6.0,
             character_position: InterpolatedPosition::new(0.0, 0.0),
             debug_text: DebugText::new(),
+            should_draw_debug_text: true,
         }
     }
 
     pub fn update(&mut self, context: &mut Context, input: &ControllerState) {
+        let mut game_updated = false;
         let fighting_game = &mut self.fighting_game;
-
         self.fixed_timestep.update(timer::delta(context), || {
             fighting_game.update(input);
+            game_updated = true;
         });
 
+        if game_updated {
+            self.on_game_update();
+        }
+    }
+
+    fn on_game_update(&mut self) {
+        self.update_debug_text();
         self.character_position.set(
             self.fighting_game.player.x(),
             self.fighting_game.player.y(),
@@ -45,7 +55,9 @@ impl RenderedFightingGame {
         let interpolation = self.fixed_timestep.interpolation();
 
         self.draw_ground(context)?;
-        //self.draw_debug_text(context)?;
+        if self.should_draw_debug_text {
+            self.draw_debug_text(context)?;
+        }
         self.draw_character(context, interpolation)?;
 
         Ok(())
@@ -84,19 +96,21 @@ impl RenderedFightingGame {
         Ok(())
     }
 
+    fn update_debug_text(&mut self) {
+        self.debug_text.update_text(
+            self.fighting_game.player.state_as_string(),
+            format!("{}", self.fighting_game.player.state_frame()),
+            format!("{:.5}", self.fighting_game.player.x_velocity()),
+            format!("{:.5}", self.fighting_game.player.y_velocity()),
+            format!("{:.4}", self.fighting_game.input.left_stick.x_axis.value()),
+            format!("{:.4}", self.fighting_game.input.left_stick.y_axis.value())
+        );
+    }
+
     fn draw_debug_text(&mut self, context: &mut Context) -> GameResult {
-        let screen_coordinates = graphics::screen_coordinates(context);
-        let screen_width = screen_coordinates.w;
-        let screen_height = screen_coordinates.h;
-        self.debug_text.draw(context,
-                             self.fighting_game.player.state_as_string(),
-                             format!("{}", self.fighting_game.player.state_frame()),
-                             format!("{:.5}", self.fighting_game.player.x_velocity()),
-                             format!("{:.5}", self.fighting_game.player.y_velocity()),
-                             format!("{:.4}", self.fighting_game.input.left_stick.x_axis.value()),
-                             format!("{:.4}", self.fighting_game.input.left_stick.y_axis.value()),
-                             0.5 * screen_width + 20.0,
-                             0.5 * screen_height + 200.0)?;
+        let screen_width = self.screen_width(context);
+        let screen_height = self.screen_height(context);
+        self.debug_text.draw(context, 0.5 * screen_width + 20.0, 0.5 * screen_height + 200.0)?;
         Ok(())
     }
 }
