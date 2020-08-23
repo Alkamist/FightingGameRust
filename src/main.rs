@@ -6,7 +6,7 @@ mod fixed_timestep;
 mod fighting_game;
 mod fighter;
 mod debug_text;
-mod fighting_game_renderer;
+mod rendered_fighting_game;
 mod interpolated_position;
 
 use ggez::{
@@ -25,26 +25,17 @@ use ggez::{
 };
 
 use crate::controller_state::ControllerState;
-//use crate::fixed_timestep::FixedTimestep;
-use crate::fighting_game::FightingGame;
-use crate::fighting_game_renderer::FightingGameRenderer;
+use crate::rendered_fighting_game::RenderedFightingGame;
 
 struct MainState {
-    //fixed_timestep: FixedTimestep,
-    game_fps: u32,
-    fighting_game: FightingGame,
-    fighting_game_renderer: FightingGameRenderer,
+    fighting_game: RenderedFightingGame,
     controller_state: ControllerState,
 }
 
 impl MainState {
     fn new() -> GameResult<MainState> {
-        const GAME_FPS: u32 = 60;
         let s = MainState {
-            //fixed_timestep: FixedTimestep::new(60.0),
-            game_fps: GAME_FPS,
-            fighting_game: FightingGame::new(),
-            fighting_game_renderer: FightingGameRenderer::new(GAME_FPS),
+            fighting_game: RenderedFightingGame::new(),
             controller_state: ControllerState::new(0.2875),
         };
         Ok(s)
@@ -74,31 +65,15 @@ impl MainState {
 
 impl EventHandler for MainState {
     fn update(&mut self, context: &mut Context) -> GameResult {
-//        self.update_game_input_with_keyboard(context);
-//
-//        let fighting_game = &mut self.fighting_game;
-//        let controller_state = &mut self.controller_state;
-//        self.fixed_timestep.update(timer::delta(context), || {
-//            fighting_game.update(controller_state);
-//        });
-//
-//        self.controller_state.update();
-
-        while timer::check_update_time(context, self.game_fps) {
-            self.update_game_input_with_keyboard(context);
-            self.fighting_game.update(&self.controller_state);
-            self.fighting_game_renderer.on_game_update(&self.fighting_game);
-            self.controller_state.update();
-        }
-
+        self.update_game_input_with_keyboard(context);
+        self.fighting_game.update(context, &self.controller_state);
+        self.controller_state.update();
         Ok(())
     }
 
     fn draw(&mut self, context: &mut Context) -> GameResult {
         graphics::clear(context, graphics::BLACK);
-
-        self.fighting_game_renderer.draw(context)?;
-
+        self.fighting_game.draw(context)?;
         graphics::present(context)?;
         timer::yield_now();
         Ok(())
