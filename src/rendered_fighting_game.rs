@@ -53,7 +53,8 @@ impl RenderedFightingGame {
         let interpolation = self.fixed_timestep.interpolation();
 
         const BACKGROUND_COLOR: [f32; 4] = [0.0, 0.0, 0.0, 1.0];
-        const CHARACTER_COLOR: [f32; 4] = [1.0, 1.0, 1.0, 1.0];
+        const CHARACTER_COLOR: [f32; 4] = [0.5, 0.5, 0.5, 1.0];
+        const CHARACTER_FACING_COLOR: [f32; 4] = [0.9, 0.9, 0.9, 1.0];
         const GROUND_COLOR: [f32; 4] = [0.3, 0.3, 0.3, 1.0];
 
         let window_size = window.size();
@@ -69,12 +70,15 @@ impl RenderedFightingGame {
 
         let ground_rect = rectangle::rectangle_by_corners(0.0, 0.0, screen_width, 50.0);
         let character_rect = rectangle::rectangle_by_corners(0.0, 0.0, character_pixel_width, character_pixel_height);
+        let character_facing_width = 12.0;
+        let character_facing_rect = rectangle::rectangle_by_corners(0.0, 0.0, character_facing_width, character_pixel_height);
+        let character_facing_offset = (character_pixel_width - character_facing_width) * (0.5 * (self.player().facing_direction() + 1.0)) as f64;
 
         window.draw_2d(event, |c, g, _| {
             clear(BACKGROUND_COLOR, g);
-
             rectangle(GROUND_COLOR, ground_rect, c.transform.trans(0.0, camera_pixel_y), g);
             rectangle(CHARACTER_COLOR, character_rect, c.transform.trans(character_pixel_x, character_pixel_y), g);
+            rectangle(CHARACTER_FACING_COLOR, character_facing_rect, c.transform.trans(character_pixel_x + character_facing_offset, character_pixel_y), g);
         });
     }
 }
