@@ -6,6 +6,7 @@ use crate::fixed_timestep::FixedTimestep;
 use crate::fighting_game::FightingGame;
 use crate::interpolated_position::InterpolatedPosition;
 use crate::controller_state::ControllerState;
+use crate::fighter::Fighter;
 
 pub struct RenderedFightingGame {
     fighting_game: FightingGame,
@@ -24,6 +25,9 @@ impl RenderedFightingGame {
             character_position: InterpolatedPosition::new(0.0, 0.0),
         }
     }
+
+    pub fn input(&self) -> &ControllerState { &self.fighting_game.input }
+    pub fn player(&self) -> &Fighter { &self.fighting_game.player }
 
     pub fn update(&mut self, delta: Duration, input: &ControllerState) {
         let mut game_updated = false;
@@ -71,13 +75,6 @@ impl RenderedFightingGame {
 
             rectangle(GROUND_COLOR, ground_rect, c.transform.trans(0.0, camera_pixel_y), g);
             rectangle(CHARACTER_COLOR, character_rect, c.transform.trans(character_pixel_x, character_pixel_y), g);
-
-            //let mut text = Text::new(22);
-            //text.draw(&format!("{}", self.fighting_game.player.x()),
-            //                   &mut self.font,
-            //                   &c.draw_state,
-            //                   c.transform.trans(camera_pixel_x, camera_pixel_y + 250.0),
-            //                   gl);
         });
     }
 }

@@ -18,6 +18,7 @@ impl FightingGame {
 
     pub fn update(&mut self, input: &ControllerState) {
         self.input.copy_inputs(input);
+        self.input.convert_to_melee_values();
 
         let mut frame_advance = false;
 

@@ -5,7 +5,6 @@ mod controller_state;
 mod fixed_timestep;
 mod fighting_game;
 mod fighter;
-//mod debug_text;
 mod rendered_fighting_game;
 mod interpolated_position;
 
@@ -39,6 +38,11 @@ fn main() {
     let mut l_state = false;
     let mut r_state = false;
     let mut start_state = false;
+
+    const DEBUG_TEXT_COLOR: [f32; 4] = [0.2, 0.9, 0.2, 1.0];
+    const DEBUG_TEXT_OFFSET: f64 = 50.0;
+    const DEBUG_TEXT_X_SPACING: f64 = 150.0;
+    const DEBUG_TEXT_Y_SPACING: f64 = 25.0;
 
     let mut time_previous = Instant::now();
     while let Some(e) = window.next() {
@@ -94,19 +98,60 @@ fn main() {
 
         game.render(&e, &mut window);
 
-//        window.draw_2d(&e, |c, g, device| {
-//            let transform = c.transform.trans(10.0, 100.0);
-//
-//            text::Text::new_color([0.0, 1.0, 0.0, 1.0], 32).draw(
-//                "Hello world!",
-//                &mut glyphs,
-//                &c.draw_state,
-//                transform, g
-//            ).unwrap();
-//
-//            // Update glyphs before rendering.
-//            glyphs.factory.encoder.flush(device);
-//        });
+        // ============== DRAW DEBUG TEXT ==============
 
+        let debug_text_pixel_x = 0.5 * window.size().width;
+        let debug_text_pixel_y = 0.5 * window.size().height + 250.0;
+        window.draw_2d(&e, |c, g, device| {
+            Text::new_color(DEBUG_TEXT_COLOR, 20).draw(
+                &game.player().state_as_string()[..],
+                &mut glyphs,
+                &c.draw_state,
+                c.transform.trans(DEBUG_TEXT_OFFSET + debug_text_pixel_x, debug_text_pixel_y),
+                g,
+            ).unwrap();
+
+            Text::new_color(DEBUG_TEXT_COLOR, 20).draw(
+                &format!("{}", game.player().state_frame())[..],
+                &mut glyphs,
+                &c.draw_state,
+                c.transform.trans(DEBUG_TEXT_OFFSET + debug_text_pixel_x, debug_text_pixel_y + DEBUG_TEXT_Y_SPACING),
+                g,
+            ).unwrap();
+
+            Text::new_color(DEBUG_TEXT_COLOR, 20).draw(
+                &format!("{:.5}", game.player().x_velocity())[..],
+                &mut glyphs,
+                &c.draw_state,
+                c.transform.trans(DEBUG_TEXT_OFFSET + debug_text_pixel_x - DEBUG_TEXT_X_SPACING, debug_text_pixel_y + DEBUG_TEXT_Y_SPACING),
+                g,
+            ).unwrap();
+
+            Text::new_color(DEBUG_TEXT_COLOR, 20).draw(
+                &format!("{:.5}", game.player().y_velocity())[..],
+                &mut glyphs,
+                &c.draw_state,
+                c.transform.trans(DEBUG_TEXT_OFFSET + debug_text_pixel_x - DEBUG_TEXT_X_SPACING, debug_text_pixel_y),
+                g,
+            ).unwrap();
+
+            Text::new_color(DEBUG_TEXT_COLOR, 20).draw(
+                &format!("{:.4}", game.input().left_stick.x_axis.value())[..],
+                &mut glyphs,
+                &c.draw_state,
+                c.transform.trans(DEBUG_TEXT_OFFSET + debug_text_pixel_x - 2.0 * DEBUG_TEXT_X_SPACING, debug_text_pixel_y + DEBUG_TEXT_Y_SPACING),
+                g,
+            ).unwrap();
+
+            Text::new_color(DEBUG_TEXT_COLOR, 20).draw(
+                &format!("{:.4}", game.input().left_stick.y_axis.value())[..],
+                &mut glyphs,
+                &c.draw_state,
+                c.transform.trans(DEBUG_TEXT_OFFSET + debug_text_pixel_x - 2.0 * DEBUG_TEXT_X_SPACING, debug_text_pixel_y),
+                g,
+            ).unwrap();
+
+            glyphs.factory.encoder.flush(device);
+        });
     }
 }
