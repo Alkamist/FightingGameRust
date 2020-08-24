@@ -1,21 +1,21 @@
 use std::time::Duration;
 
 pub struct FixedTimestep {
-    interpolation: f32,
+    interpolation: f64,
     fixed_delta: Duration,
     accumulator: Duration
 }
 
 impl FixedTimestep {
-    pub fn new(fixed_fps: f32) -> FixedTimestep {
+    pub fn new(fixed_fps: f64) -> FixedTimestep {
         FixedTimestep{
             interpolation: 0.0,
-            fixed_delta: Duration::from_secs_f32(1.0 / fixed_fps),
+            fixed_delta: Duration::from_secs_f64(1.0 / fixed_fps),
             accumulator: Duration::new(0, 0)
         }
     }
 
-    pub fn interpolation(&self) -> f32 { self.interpolation }
+    pub fn interpolation(&self) -> f64 { self.interpolation }
 
     pub fn update<F>(&mut self, delta: Duration, mut update_fn: F)
         where F: FnMut()
@@ -25,6 +25,6 @@ impl FixedTimestep {
             update_fn();
             self.accumulator -= self.fixed_delta;
         }
-        self.interpolation = self.accumulator.as_secs_f32() / self.fixed_delta.as_secs_f32();
+        self.interpolation = self.accumulator.as_secs_f64() / self.fixed_delta.as_secs_f64();
     }
 }

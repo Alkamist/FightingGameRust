@@ -12,7 +12,7 @@ impl FightingGame {
         FightingGame{
             input: ControllerState::new(0.2875),
             player: Fighter::fox(),
-            is_paused: false
+            is_paused: false,
         }
     }
 

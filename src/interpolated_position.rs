@@ -1,12 +1,12 @@
 pub struct InterpolatedPosition {
-    x_current: f32,
-    x_previous: f32,
-    y_current: f32,
-    y_previous: f32,
+    x_current: f64,
+    x_previous: f64,
+    y_current: f64,
+    y_previous: f64,
 }
 
 impl InterpolatedPosition {
-    pub fn new(x: f32, y: f32) -> InterpolatedPosition {
+    pub fn new(x: f64, y: f64) -> InterpolatedPosition {
         InterpolatedPosition{
             x_current: x,
             x_previous: x,
@@ -15,23 +15,23 @@ impl InterpolatedPosition {
         }
     }
 
-    pub fn x(&self, interpolation: f32) -> f32 {
+    pub fn x(&self, interpolation: f64) -> f64 {
         interpolation * (self.x_current - self.x_previous) + self.x_previous
     }
-    pub fn set_x(&mut self, value: f32) {
+    pub fn set_x(&mut self, value: f64) {
         self.x_previous = self.x_current;
         self.x_current = value;
     }
 
-    pub fn y(&self, interpolation: f32) -> f32 {
+    pub fn y(&self, interpolation: f64) -> f64 {
         interpolation * (self.y_current - self.y_previous) + self.y_previous
     }
-    pub fn set_y(&mut self, value: f32) {
+    pub fn set_y(&mut self, value: f64) {
         self.y_previous = self.y_current;
         self.y_current = value;
     }
 
-    pub fn set(&mut self, x: f32, y: f32) {
+    pub fn set(&mut self, x: f64, y: f64) {
         self.set_x(x);
         self.set_y(y);
     }
