@@ -1,9 +1,6 @@
 use std::time::Duration;
-use std::path::Path;
 
-use opengl_graphics::{GlGraphics, GlyphCache};
-use piston::input::RenderArgs;
-use graphics::*;
+use piston_window::*;
 
 use crate::fixed_timestep::FixedTimestep;
 use crate::fighting_game::FightingGame;
@@ -11,24 +8,20 @@ use crate::interpolated_position::InterpolatedPosition;
 use crate::controller_state::ControllerState;
 
 pub struct RenderedFightingGame {
-    gl: GlGraphics,
     fighting_game: FightingGame,
     fixed_timestep: FixedTimestep,
     camera_zoom: f64,
     character_position: InterpolatedPosition,
-    //text_font: GlyphCache<'static>,
 }
 
 impl RenderedFightingGame {
-    pub fn new(gl: GlGraphics) -> RenderedFightingGame {
+    pub fn new() -> RenderedFightingGame {
         const GAME_FPS: f64 = 60.0;
         RenderedFightingGame {
-            gl: gl,
             fighting_game: FightingGame::new(),
             fixed_timestep: FixedTimestep::new(GAME_FPS),
             camera_zoom: 6.0,
             character_position: InterpolatedPosition::new(0.0, 0.0),
-            //text_font: GlyphCache::new(&Path::new("assets/consola.ttf")).unwrap(),
         }
     }
 
@@ -52,15 +45,16 @@ impl RenderedFightingGame {
         )
     }
 
-    pub fn render(&mut self, args: &RenderArgs) {
+    pub fn render(&mut self, event: &Event, window: &mut PistonWindow) {
         let interpolation = self.fixed_timestep.interpolation();
 
-        const BLACK: [f32; 4] = [0.0, 0.0, 0.0, 1.0];
-        const WHITE: [f32; 4] = [1.0, 1.0, 1.0, 1.0];
-        const GRAY: [f32; 4] = [0.3, 0.3, 0.3, 1.0];
+        const BACKGROUND_COLOR: [f32; 4] = [0.0, 0.0, 0.0, 1.0];
+        const CHARACTER_COLOR: [f32; 4] = [1.0, 1.0, 1.0, 1.0];
+        const GROUND_COLOR: [f32; 4] = [0.3, 0.3, 0.3, 1.0];
 
-        let screen_width = args.window_size[0];
-        let screen_height = args.window_size[1];
+        let window_size = window.size();
+        let screen_width = window_size.width;
+        let screen_height = window_size.height;
         let camera_pixel_x = 0.5 * screen_width;
         let camera_pixel_y = 0.5 * screen_height + 130.0;
 
@@ -72,21 +66,18 @@ impl RenderedFightingGame {
         let ground_rect = rectangle::rectangle_by_corners(0.0, 0.0, screen_width, 50.0);
         let character_rect = rectangle::rectangle_by_corners(0.0, 0.0, character_pixel_width, character_pixel_height);
 
-        self.gl.draw(args.viewport(), |c, gl| {
-            clear(BLACK, gl);
+        window.draw_2d(event, |c, g, _| {
+            clear(BACKGROUND_COLOR, g);
 
-            rectangle(GRAY, ground_rect, c.transform.trans(0.0, camera_pixel_y), gl);
-            rectangle(WHITE, character_rect, c.transform.trans(character_pixel_x, character_pixel_y), gl);
+            rectangle(GROUND_COLOR, ground_rect, c.transform.trans(0.0, camera_pixel_y), g);
+            rectangle(CHARACTER_COLOR, character_rect, c.transform.trans(character_pixel_x, character_pixel_y), g);
 
-            let mut text = Text::new(22);
-            text.draw(&format!("{}", self.fighting_game.player.x()),
-                               &mut self.font,
-                               &c.draw_state,
-                               c.transform.trans(camera_pixel_x, camera_pixel_y + 250.0),
-                               gl);
+            //let mut text = Text::new(22);
+            //text.draw(&format!("{}", self.fighting_game.player.x()),
+            //                   &mut self.font,
+            //                   &c.draw_state,
+            //                   c.transform.trans(camera_pixel_x, camera_pixel_y + 250.0),
+            //                   gl);
         });
     }
-
-    fn screen_width(&self, args: &RenderArgs) -> f64 { args.window_size[0] }
-    fn screen_height(&self, args: &RenderArgs) -> f64 { args.window_size[1] }
 }

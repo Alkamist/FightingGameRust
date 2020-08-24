@@ -9,34 +9,26 @@ mod fighter;
 mod rendered_fighting_game;
 mod interpolated_position;
 
-extern crate glutin_window;
-extern crate graphics;
-extern crate opengl_graphics;
-extern crate piston;
+extern crate find_folder;
+extern crate piston_window;
+use piston_window::*;
 
 use std::time::Instant;
 
-use glutin_window::GlutinWindow as Window;
-use opengl_graphics::{GlGraphics, OpenGL};
-use piston::event_loop::*;
-use piston::input::{self, *};
-use piston::window::WindowSettings;
-
-use crate::rendered_fighting_game::RenderedFightingGame;
 use crate::controller_state::ControllerState;
+use crate::rendered_fighting_game::RenderedFightingGame;
 
 fn main() {
-    let opengl = OpenGL::V3_2;
+    let mut window: PistonWindow = WindowSettings::new("Fighting Game", [800, 600]).build().unwrap();
+    window.set_max_fps(300);
+    window.set_ups(60);
 
-    let mut window: Window = WindowSettings::new("fighting-game", [800, 600])
-        .graphics_api(opengl)
-        .exit_on_esc(true)
-        .build()
-        .unwrap();
+    let assets = find_folder::Search::ParentsThenKids(3, 3).for_folder("assets").unwrap();
+    let mut glyphs = window.load_font(assets.join("consola.ttf")).unwrap();
+
+    let mut game = RenderedFightingGame::new();
 
     let mut input = ControllerState::new(0.2875);
-    let mut app = RenderedFightingGame::new(GlGraphics::new(opengl));
-
     let mut left_state = false;
     let mut right_state = false;
     let mut down_state = false;
@@ -48,17 +40,12 @@ fn main() {
     let mut r_state = false;
     let mut start_state = false;
 
-    let mut events = Events::new(EventSettings::new());
-    // If you do set_ups(0) then the rendering lags terribly for some reason.
-    events.set_ups(60);
-    events.set_max_fps(300);
-
     let mut time_previous = Instant::now();
-    while let Some(e) = events.next(&mut window) {
+    while let Some(e) = window.next() {
         if let Some(args) = e.button_args() {
             match args.state {
                 ButtonState::Press => match args.button {
-                    input::Button::Keyboard(key) => match key {
+                    Button::Keyboard(key) => match key {
                         Key::A => left_state = true,
                         Key::D => right_state = true,
                         Key::S => down_state = true,
@@ -74,7 +61,7 @@ fn main() {
                     _ => ()
                 },
                 ButtonState::Release => match args.button {
-                    input::Button::Keyboard(key) => match key {
+                    Button::Keyboard(key) => match key {
                         Key::A => left_state = false,
                         Key::D => right_state = false,
                         Key::S => down_state = false,
@@ -90,7 +77,6 @@ fn main() {
                     _ => ()
                 }
             }
-
             input.left_stick.x_axis.set_value_from_states(left_state, right_state);
             input.left_stick.y_axis.set_value_from_states(down_state, up_state);
             input.x_button.set_pressed(x_state);
@@ -104,10 +90,23 @@ fn main() {
         let time_current = Instant::now();
         let delta = time_current - time_previous;
         time_previous = time_current;
-        app.update(delta, &input);
+        game.update(delta, &input);
 
-        if let Some(args) = e.render_args() {
-            app.render(&args);
-        }
+        game.render(&e, &mut window);
+
+//        window.draw_2d(&e, |c, g, device| {
+//            let transform = c.transform.trans(10.0, 100.0);
+//
+//            text::Text::new_color([0.0, 1.0, 0.0, 1.0], 32).draw(
+//                "Hello world!",
+//                &mut glyphs,
+//                &c.draw_state,
+//                transform, g
+//            ).unwrap();
+//
+//            // Update glyphs before rendering.
+//            glyphs.factory.encoder.flush(device);
+//        });
+
     }
 }
