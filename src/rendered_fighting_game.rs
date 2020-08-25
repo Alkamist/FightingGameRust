@@ -24,9 +24,9 @@ impl RenderedFightingGame {
         RenderedFightingGame {
             fighting_game: FightingGame::new(),
             fixed_timestep: FixedTimestep::new(GAME_FPS),
-            camera_zoom: 6.0,
+            camera_zoom: 4.0,
             camera_x: 0.0,
-            camera_y: 0.0,
+            camera_y: 20.0,
             character_position: InterpolatedPosition::new(0.0, 0.0),
             glyphs: window.load_font("C:/Windows/Fonts/consola.ttf").unwrap(),
         }
@@ -91,24 +91,29 @@ impl RenderedFightingGame {
         let interpolation = self.fixed_timestep.interpolation();
 
         // Draw the main character body.
-        let character_pixel_width = 8.0 * self.camera_zoom;
-        let character_pixel_height = 16.0 * self.camera_zoom;
-        let character_pixel_x = self.to_screen_x(self.character_position.x(interpolation), window_width) - 0.5 * character_pixel_width;
-        let character_pixel_y = self.to_screen_y(self.character_position.y(interpolation), window_height) - character_pixel_height;
-        rectangle(
+        let character_pixel_x = self.to_screen_x(self.character_position.x(interpolation), window_width);
+        let character_pixel_y = self.to_screen_y(self.character_position.y(interpolation), window_height);
+        let player_ecb = self.player().ecb();
+        let screen_ecb = [
+            [self.camera_zoom * (player_ecb[0][0] as f64), self.camera_zoom * -(player_ecb[0][1] as f64)],
+            [self.camera_zoom * (player_ecb[1][0] as f64), self.camera_zoom * -(player_ecb[1][1] as f64)],
+            [self.camera_zoom * (player_ecb[2][0] as f64), self.camera_zoom * -(player_ecb[2][1] as f64)],
+            [self.camera_zoom * (player_ecb[3][0] as f64), self.camera_zoom * -(player_ecb[3][1] as f64)]
+        ];
+        polygon(
             [0.5, 0.5, 0.5, 1.0],
-            rectangle::rectangle_by_corners(0.0, 0.0, character_pixel_width, character_pixel_height),
+            &screen_ecb,
             context.transform.trans(character_pixel_x, character_pixel_y),
             graphics,
         );
 
         // Draw a way to tell which way the character is facing.
         let character_facing_width = 2.0 * self.camera_zoom;
-        let character_facing_offset = (character_pixel_width - character_facing_width) * (0.5 * (self.player().facing_direction() + 1.0)) as f64;
+        let character_facing_offset = (character_facing_width) * (self.player().facing_direction() as f64);
         rectangle(
             [0.9, 0.9, 0.9, 1.0],
-            rectangle::rectangle_by_corners(0.0, 0.0, character_facing_width, character_pixel_height),
-            context.transform.trans(character_pixel_x + character_facing_offset, character_pixel_y),
+            rectangle::rectangle_by_corners(0.0, 0.0, character_facing_width, character_facing_width),
+            context.transform.trans(character_pixel_x + character_facing_offset - 0.5 * character_facing_width, character_pixel_y - 12.0 * self.camera_zoom),
             graphics,
         );
     }
@@ -186,7 +191,7 @@ impl RenderedFightingGame {
         graphics: &mut G2d,
         window_width: f64,
         window_height: f64,
-        poly_line: &Vec<[f32; 2]>,
+        poly_line: &Vec<[f64; 2]>,
         color: types::Color,
     ) {
         let poly_line_length = poly_line.len();
@@ -217,9 +222,21 @@ impl RenderedFightingGame {
         window_height: f64,
     ) {
         let color = [0.3, 0.3, 0.3, 1.0];
-        self.draw_poly_line(context, graphics, window_width, window_height, self.fighting_game.stage.left_walls(), color);
-        self.draw_poly_line(context, graphics, window_width, window_height, self.fighting_game.stage.right_walls(), color);
-        self.draw_poly_line(context, graphics, window_width, window_height, self.fighting_game.stage.grounds(), color);
-        self.draw_poly_line(context, graphics, window_width, window_height, self.fighting_game.stage.ceilings(), color);
+
+        for wall in self.fighting_game.stage.left_walls() {
+            self.draw_poly_line(context, graphics, window_width, window_height, wall, color);
+        }
+        for wall in self.fighting_game.stage.right_walls() {
+            self.draw_poly_line(context, graphics, window_width, window_height, wall, color);
+        }
+        for ground in self.fighting_game.stage.grounds() {
+            self.draw_poly_line(context, graphics, window_width, window_height, ground, color);
+        }
+        for ceiling in self.fighting_game.stage.ceilings() {
+            self.draw_poly_line(context, graphics, window_width, window_height, ceiling, color);
+        }
+        for platform in self.fighting_game.stage.platforms() {
+            self.draw_poly_line(context, graphics, window_width, window_height, platform, color);
+        }
     }
 }

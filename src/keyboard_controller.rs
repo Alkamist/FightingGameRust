@@ -17,7 +17,7 @@ pub struct KeyboardController {
 }
 
 impl KeyboardController {
-    pub fn new(dead_zone: f32) -> KeyboardController {
+    pub fn new(dead_zone: f64) -> KeyboardController {
         KeyboardController {
             controller_state: ControllerState::new(dead_zone),
             left_state: false,

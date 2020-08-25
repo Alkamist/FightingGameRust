@@ -19,48 +19,47 @@ pub enum FighterState {
 }
 
 pub struct Fighter {
-    ground_friction: f32,
+    ground_friction: f64,
 
-    dash_start_velocity: f32,
-    dash_max_velocity: f32,
-    dash_base_acceleration: f32,
-    dash_axis_acceleration: f32,
+    dash_start_velocity: f64,
+    dash_max_velocity: f64,
+    dash_base_acceleration: f64,
+    dash_axis_acceleration: f64,
 
-    walk_start_velocity: f32,
-    walk_max_velocity: f32,
-    walk_acceleration: f32,
+    walk_start_velocity: f64,
+    walk_max_velocity: f64,
+    walk_acceleration: f64,
 
-    air_friction: f32,
-    air_base_acceleration: f32,
-    air_axis_acceleration: f32,
-    air_max_velocity: f32,
+    air_friction: f64,
+    air_base_acceleration: f64,
+    air_axis_acceleration: f64,
+    air_max_velocity: f64,
 
     jump_squat_frames: u32,
-    jump_velocity_dampening: f32,
-    jump_max_horizontal_velocity: f32,
-    jump_start_horizontal_velocity: f32,
-    short_hop_velocity: f32,
-    full_hop_velocity: f32,
-    fall_velocity: f32,
-    fast_fall_velocity: f32,
-    air_jump_velocity_multiplier: f32,
-    air_jump_horizontal_axis_multiplier: f32,
+    jump_velocity_dampening: f64,
+    jump_max_horizontal_velocity: f64,
+    jump_start_horizontal_velocity: f64,
+    short_hop_velocity: f64,
+    full_hop_velocity: f64,
+    fall_velocity: f64,
+    fast_fall_velocity: f64,
+    air_jump_velocity_multiplier: f64,
+    air_jump_horizontal_axis_multiplier: f64,
     air_jumps: u32,
-    gravity: f32,
+    gravity: f64,
 
     dash_min_frames: u32,
     dash_max_frames: u32,
     slow_dash_back_frames: u32,
     turn_frames: u32,
-    run_turn_frames: u32,
     run_brake_frames: u32,
 
-    x: f32,
-    y: f32,
-    x_velocity: f32,
-    y_velocity: f32,
-    x_previous: f32,
-    y_previous: f32,
+    x: f64,
+    y: f64,
+    x_velocity: f64,
+    y_velocity: f64,
+    x_previous: f64,
+    y_previous: f64,
     air_jumps_left: u32,
     is_facing_right: bool,
     was_facing_right: bool,
@@ -75,7 +74,9 @@ pub struct Fighter {
     run_turn_melee_frame: u32,
     run_turn_was_facing_right_initially: bool,
     run_turn_has_changed_direction: bool,
-    run_turn_has_fully_turned: bool
+    run_turn_has_fully_turned: bool,
+
+    ecb: [[f64; 2]; 4],
 }
 
 // Character builders.
@@ -110,7 +111,6 @@ impl Fighter {
             dash_max_frames: 21,
             slow_dash_back_frames: 5,
             turn_frames: 11,
-            run_turn_frames: 30,
             run_brake_frames: 18,
             x: 0.0,
             y: 0.0,
@@ -129,7 +129,13 @@ impl Fighter {
             run_turn_melee_frame: 0,
             run_turn_was_facing_right_initially: true,
             run_turn_has_changed_direction: false,
-            run_turn_has_fully_turned: false
+            run_turn_has_fully_turned: false,
+            ecb: [
+                [0.0, 0.0],
+                [-2.3, 6.0],
+                [0.0, 12.0],
+                [2.3, 6.0],
+            ],
         }
     }
 }
@@ -149,10 +155,12 @@ impl Fighter {
 
 // Public methods.
 impl Fighter {
-    pub fn x(&self) -> f32 { self.x }
-    pub fn y(&self) -> f32 { self.y }
-    pub fn x_velocity(&self) -> f32 { self.x_velocity }
-    pub fn y_velocity(&self) -> f32 { self.y_velocity }
+    pub fn ecb(&self) -> &[[f64; 2]; 4] { &self.ecb }
+
+    pub fn x(&self) -> f64 { self.x }
+    pub fn y(&self) -> f64 { self.y }
+    pub fn x_velocity(&self) -> f64 { self.x_velocity }
+    pub fn y_velocity(&self) -> f64 { self.y_velocity }
 
     pub fn x_axis(&self) -> &AnalogAxis { &self.input.left_stick.x_axis }
     pub fn y_axis(&self) -> &AnalogAxis { &self.input.left_stick.y_axis }
@@ -178,7 +186,7 @@ impl Fighter {
         self.state_previous = self.state;
         self.state = new_state;
     }
-    pub fn facing_direction(&self) -> f32 { if self.is_facing_right { 1.0 } else { -1.0 } }
+    pub fn facing_direction(&self) -> f64 { if self.is_facing_right { 1.0 } else { -1.0 } }
     pub fn just_turned(&self) -> bool { self.is_facing_right != self.was_facing_right }
 
     pub fn state_as_string(&self) -> String {
@@ -205,6 +213,8 @@ impl Fighter {
             _ => ()
         }
     }
+
+    //pub fn asdfasdf(collision_line: [f64])
 }
 
 // State update logic.
@@ -288,17 +298,17 @@ impl Fighter {
         self.y += self.y_velocity;
     }
 
-    fn apply_friction(&self, velocity: f32, friction: f32) -> f32 {
+    fn apply_friction(&self, velocity: f64, friction: f64) -> f64 {
         velocity - velocity.signum() * velocity.abs().min(friction)
     }
 
     fn apply_acceleration(&self,
-                          velocity: f32,
+                          velocity: f64,
                           axis: &AnalogAxis,
-                          base_acceleration: f32,
-                          axis_acceleration: f32,
-                          max_velocity: f32,
-                          friction: f32) -> f32 {
+                          base_acceleration: f64,
+                          axis_acceleration: f64,
+                          max_velocity: f64,
+                          friction: f64) -> f64 {
         let mut new_velocity = velocity;
 
         if velocity.abs() > max_velocity {

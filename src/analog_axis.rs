@@ -1,15 +1,15 @@
 #[derive(Copy, Clone)]
 pub struct AnalogAxis {
-    value_current: f32,
-    value_previous: f32,
-    dead_zone: f32,
+    value_current: f64,
+    value_previous: f64,
+    dead_zone: f64,
     active_previous: bool,
     active_frames: u32,
     high_state_was_first: bool
 }
 
 impl AnalogAxis {
-    pub fn new(dead_zone: f32) -> AnalogAxis {
+    pub fn new(dead_zone: f64) -> AnalogAxis {
         AnalogAxis{
             value_current: 0.0,
             value_previous: 0.0,
@@ -20,9 +20,9 @@ impl AnalogAxis {
         }
     }
 
-    pub fn value(&self) -> f32 { self.value_current }
-    pub fn magnitude(&self) -> f32 { self.value_current.abs() }
-    pub fn direction(&self) -> f32 {
+    pub fn value(&self) -> f64 { self.value_current }
+    pub fn magnitude(&self) -> f64 { self.value_current.abs() }
+    pub fn direction(&self) -> f64 {
         if self.value_current > 0.0 { return 1.0; }
         else if self.value_current < 0.0 { return -1.0; }
         0.0
@@ -37,7 +37,7 @@ impl AnalogAxis {
 
     pub fn active_frames(&self) -> u32 { self.active_frames }
 
-    pub fn set_value(&mut self, value: f32) { self.value_current = value; }
+    pub fn set_value(&mut self, value: f64) { self.value_current = value; }
     pub fn set_value_from_states(&mut self, low: bool, high: bool) {
         if high && !low {
             self.high_state_was_first = true;

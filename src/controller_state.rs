@@ -20,7 +20,7 @@ pub struct ControllerState {
 }
 
 impl ControllerState {
-    pub fn new(dead_zone: f32) -> ControllerState {
+    pub fn new(dead_zone: f64) -> ControllerState {
         ControllerState{
             left_stick: AnalogStick::new(dead_zone),
             c_stick: AnalogStick::new(dead_zone),

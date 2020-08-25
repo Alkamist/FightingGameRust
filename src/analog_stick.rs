@@ -7,18 +7,18 @@ pub struct AnalogStick {
 }
 
 impl AnalogStick {
-    pub fn new(dead_zone: f32) -> AnalogStick {
+    pub fn new(dead_zone: f64) -> AnalogStick {
         AnalogStick{
             x_axis: AnalogAxis::new(dead_zone),
             y_axis: AnalogAxis::new(dead_zone)
         }
     }
 
-    pub fn magnitude(&self) -> f32 {
+    pub fn magnitude(&self) -> f64 {
         (self.x_axis.value().powi(2) + self.y_axis.value().powi(2)).sqrt()
     }
 
-    pub fn set_magnitude(&mut self, value: f32) {
+    pub fn set_magnitude(&mut self, value: f64) {
         let current_magnitude = self.magnitude();
         if current_magnitude != 0.0 {
             let scale_factor = value / current_magnitude;
@@ -27,7 +27,7 @@ impl AnalogStick {
         }
     }
 
-    pub fn angle(&self) -> f32 {
+    pub fn angle(&self) -> f64 {
         let x = self.x_axis.value();
         let y = self.y_axis.value();
         if x != 0.0 || y != 0.0 {
