@@ -276,6 +276,7 @@ name = "fighting_game"
 version = "0.1.0"
 dependencies = [
  "find_folder",
+ "gfx_device_gl",
  "piston_window",
 ]
 

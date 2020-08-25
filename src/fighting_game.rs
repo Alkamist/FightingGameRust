@@ -1,9 +1,11 @@
 use crate::controller_state::ControllerState;
 use crate::fighter::Fighter;
+use crate::fighting_stage::FightingStage;
 
 pub struct FightingGame {
     pub input: ControllerState,
     pub player: Fighter,
+    pub stage: FightingStage,
     is_paused: bool,
 }
 
@@ -13,6 +15,7 @@ impl FightingGame {
             input: ControllerState::new(0.2875),
             player: Fighter::fox(),
             is_paused: false,
+            stage: FightingStage::new(),
         }
     }
 
