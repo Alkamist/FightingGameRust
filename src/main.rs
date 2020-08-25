@@ -30,9 +30,42 @@ fn main() {
     let mut game = RenderedFightingGame::new(&mut window);
     let mut keyboard_controller = KeyboardController::new(0.2875);
 
+    let mut mouse_middle_is_down = false;
+
     let mut time_previous = Instant::now();
     while let Some(event) = window.next() {
         keyboard_controller.update(&event);
+
+        if let Some(args) = event.mouse_scroll_args() {
+            let scroll_direction = args[1];
+            game.set_camera_zoom(game.camera_zoom() + scroll_direction);
+        }
+
+        if let Some(args) = event.button_args() {
+            match args.state {
+                ButtonState::Press => match args.button {
+                    Button::Mouse(button) => match button {
+                        MouseButton::Middle => mouse_middle_is_down = true,
+                        _ => ()
+                    },
+                    _ => ()
+                },
+                ButtonState::Release => match args.button {
+                    Button::Mouse(button) => match button {
+                        MouseButton::Middle => mouse_middle_is_down = false,
+                        _ => ()
+                    },
+                    _ => ()
+                }
+            }
+        }
+
+        if let Some(args) = event.mouse_relative_args() {
+            if mouse_middle_is_down {
+                game.set_camera_x(game.camera_x() + args[0] / game.camera_zoom());
+                game.set_camera_y(game.camera_y() + args[1] / game.camera_zoom());
+            }
+        }
 
         let time_current = Instant::now();
         let delta = time_current - time_previous;

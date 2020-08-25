@@ -12,6 +12,8 @@ pub struct RenderedFightingGame {
     fighting_game: FightingGame,
     fixed_timestep: FixedTimestep,
     camera_zoom: f64,
+    camera_x: f64,
+    camera_y: f64,
     character_position: InterpolatedPosition,
     glyphs: Glyphs,
 }
@@ -23,9 +25,23 @@ impl RenderedFightingGame {
             fighting_game: FightingGame::new(),
             fixed_timestep: FixedTimestep::new(GAME_FPS),
             camera_zoom: 6.0,
+            camera_x: 0.0,
+            camera_y: 0.0,
             character_position: InterpolatedPosition::new(0.0, 0.0),
             glyphs: window.load_font("C:/Windows/Fonts/consola.ttf").unwrap(),
         }
+    }
+
+    pub fn camera_x(&self) -> f64 { self.camera_x }
+    pub fn set_camera_x(&mut self, value: f64) { self.camera_x = value; }
+
+    pub fn camera_y(&self) -> f64 { self.camera_y }
+    pub fn set_camera_y(&mut self, value: f64) { self.camera_y = value; }
+
+    pub fn camera_zoom(&self) -> f64 { self.camera_zoom }
+    pub fn set_camera_zoom(&mut self, value: f64) {
+        self.camera_zoom = value;
+        self.camera_zoom = self.camera_zoom.max(1.0);
     }
 
     pub fn input(&self) -> &ControllerState { &self.fighting_game.input }
@@ -52,10 +68,10 @@ impl RenderedFightingGame {
     }
 
     fn to_screen_x(&self, value: f64, window_width: f64) -> f64 {
-        value * self.camera_zoom + 0.5 * window_width
+        value * self.camera_zoom + 0.5 * window_width + self.camera_x * self.camera_zoom
     }
     fn to_screen_y(&self, value: f64, window_height: f64) -> f64 {
-        -value * self.camera_zoom + 0.5 * window_height + 130.0
+        -value * self.camera_zoom + 0.5 * window_height + self.camera_y * self.camera_zoom
     }
 
     pub fn render(&mut self, context: Context, graphics: &mut G2d, device: &mut gfx_device_gl::Device, window_width: f64, window_height: f64) {
@@ -75,8 +91,8 @@ impl RenderedFightingGame {
         let interpolation = self.fixed_timestep.interpolation();
 
         // Draw the main character body.
-        let character_pixel_width = 50.0;
-        let character_pixel_height = 100.0;
+        let character_pixel_width = 8.0 * self.camera_zoom;
+        let character_pixel_height = 16.0 * self.camera_zoom;
         let character_pixel_x = self.to_screen_x(self.character_position.x(interpolation), window_width) - 0.5 * character_pixel_width;
         let character_pixel_y = self.to_screen_y(self.character_position.y(interpolation), window_height) - character_pixel_height;
         rectangle(
@@ -87,7 +103,7 @@ impl RenderedFightingGame {
         );
 
         // Draw a way to tell which way the character is facing.
-        let character_facing_width = 12.0;
+        let character_facing_width = 2.0 * self.camera_zoom;
         let character_facing_offset = (character_pixel_width - character_facing_width) * (0.5 * (self.player().facing_direction() + 1.0)) as f64;
         rectangle(
             [0.9, 0.9, 0.9, 1.0],
