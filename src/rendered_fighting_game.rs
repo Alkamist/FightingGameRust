@@ -60,12 +60,18 @@ impl RenderedFightingGame {
 
     pub fn render(&mut self, context: Context, graphics: &mut G2d, device: &mut gfx_device_gl::Device, window_width: f64, window_height: f64) {
         clear([0.0, 0.0, 0.0, 1.0], graphics);
-
+        self.draw_stage(context, graphics, window_width, window_height);
         self.draw_character(context, graphics, window_width, window_height);
         self.draw_debug_text(context, graphics, device, window_width, window_height);
     }
 
-    fn draw_character(&mut self, context: Context, graphics: &mut G2d, window_width: f64, window_height: f64) {
+    fn draw_character(
+        &mut self,
+        context: Context,
+        graphics: &mut G2d,
+        window_width: f64,
+        window_height: f64,
+    ) {
         let interpolation = self.fixed_timestep.interpolation();
 
         // Draw the main character body.
@@ -91,7 +97,14 @@ impl RenderedFightingGame {
         );
     }
 
-    fn draw_debug_text(&mut self, context: Context, graphics: &mut G2d, device: &mut gfx_device_gl::Device, window_width: f64, window_height: f64) {
+    fn draw_debug_text(
+        &mut self,
+        context: Context,
+        graphics: &mut G2d,
+        device: &mut gfx_device_gl::Device,
+        window_width: f64,
+        window_height: f64,
+    ) {
         let game = &mut self.fighting_game;
         let debug_text_pixel_x = 0.5 * window_width;
         let debug_text_pixel_y = 0.5 * window_height + 250.0;
@@ -151,101 +164,46 @@ impl RenderedFightingGame {
         self.glyphs.factory.encoder.flush(device);
     }
 
-//    pub fn render(&mut self, event: &Event, window: &mut PistonWindow) {
-//        let interpolation = self.fixed_timestep.interpolation();
-//
-//        const BACKGROUND_COLOR: [f32; 4] = [0.0, 0.0, 0.0, 1.0];
-//        const CHARACTER_COLOR: [f32; 4] = [0.5, 0.5, 0.5, 1.0];
-//        const CHARACTER_FACING_COLOR: [f32; 4] = [0.9, 0.9, 0.9, 1.0];
-//        const GROUND_COLOR: [f32; 4] = [0.3, 0.3, 0.3, 1.0];
-//
-//        let window_size = window.size();
-//        let window_width = window_size.width;
-//        let window_height = window_size.height;
-//
-//        let character_pixel_width = 50.0;
-//        let character_pixel_height = 100.0;
-//        let character_pixel_x = self.to_screen_x(self.character_position.x(interpolation), window_width) - 0.5 * character_pixel_width;
-//        let character_pixel_y = self.to_screen_y(self.character_position.y(interpolation), window_height) - character_pixel_height;
-//
-//        //let ground_rect = rectangle::rectangle_by_corners(0.0, 0.0, window_width, 50.0);
-//        let character_rect = rectangle::rectangle_by_corners(0.0, 0.0, character_pixel_width, character_pixel_height);
-//        let character_facing_width = 12.0;
-//        let character_facing_rect = rectangle::rectangle_by_corners(0.0, 0.0, character_facing_width, character_pixel_height);
-//        let character_facing_offset = (character_pixel_width - character_facing_width) * (0.5 * (self.player().facing_direction() + 1.0)) as f64;
-//
-//        let stage_grounds = self.fighting_game.stage.grounds();
-//        let stage_grounds_len = stage_grounds.len();
-//        let stage_left_walls = self.fighting_game.stage.left_walls();
-//        let stage_left_walls_len = stage_left_walls.len();
-//        let stage_right_walls = self.fighting_game.stage.right_walls();
-//        let stage_right_walls_len = stage_right_walls.len();
-//
-//
-//        window.draw_2d(event, |c, g, _| {
-//            clear(BACKGROUND_COLOR, g);
-//            //rectangle(GROUND_COLOR, ground_rect, c.transform.trans(0.0, camera_pixel_y), g);
-//            rectangle(CHARACTER_COLOR, character_rect, c.transform.trans(character_pixel_x, character_pixel_y), g);
-//            rectangle(CHARACTER_FACING_COLOR, character_facing_rect, c.transform.trans(character_pixel_x + character_facing_offset, character_pixel_y), g);
-//
-//            // Draw stage grounds.
-//            if stage_grounds_len > 1 {
-//                for i in 1..stage_grounds_len {
-//                    let i_previous = i - 1;
-//                    line(
-//                        GROUND_COLOR,
-//                        1.0,
-//                        [
-//                            self.to_screen_x(stage_grounds[i_previous][0] as f64, window_width),
-//                            self.to_screen_y(stage_grounds[i_previous][1] as f64, window_height),
-//                            self.to_screen_x(stage_grounds[i][0] as f64, window_width),
-//                            self.to_screen_y(stage_grounds[i][1] as f64, window_height),
-//                        ],
-//                        c.transform.trans(0.0, 0.0),
-//                        g,
-//                    );
-//                }
-//            }
-//
-//            // Draw stage left walls.
-//            if stage_left_walls_len > 1 {
-//                for i in 1..stage_left_walls_len {
-//                    let i_previous = i - 1;
-//                    line(
-//                        GROUND_COLOR,
-//                        1.0,
-//                        [
-//                            self.to_screen_x(stage_left_walls[i_previous][0] as f64, window_width),
-//                            self.to_screen_y(stage_left_walls[i_previous][1] as f64, window_height),
-//                            self.to_screen_x(stage_left_walls[i][0] as f64, window_width),
-//                            self.to_screen_y(stage_left_walls[i][1] as f64, window_height),
-//                        ],
-//                        c.transform.trans(0.0, 0.0),
-//                        g,
-//                    );
-//                }
-//            }
-//
-//            // Draw stage right walls.
-//            if stage_right_walls_len > 1 {
-//                for i in 1..stage_right_walls_len {
-//                    let i_previous = i - 1;
-//                    line(
-//                        GROUND_COLOR,
-//                        1.0,
-//                        [
-//                            self.to_screen_x(stage_right_walls[i_previous][0] as f64, window_width),
-//                            self.to_screen_y(stage_right_walls[i_previous][1] as f64, window_height),
-//                            self.to_screen_x(stage_right_walls[i][0] as f64, window_width),
-//                            self.to_screen_y(stage_right_walls[i][1] as f64, window_height),
-//                        ],
-//                        c.transform.trans(0.0, 0.0),
-//                        g,
-//                    );
-//                }
-//            }
-//        });
-//
-//        self.debug_text.draw(&self.fighting_game, window, event);
-//    }
+    fn draw_poly_line(
+        &self,
+        context: Context,
+        graphics: &mut G2d,
+        window_width: f64,
+        window_height: f64,
+        poly_line: &Vec<[f32; 2]>,
+        color: types::Color,
+    ) {
+        let poly_line_length = poly_line.len();
+        if poly_line_length > 1 {
+            for i in 1..poly_line_length {
+                let i_previous = i - 1;
+                line(
+                    color,
+                    1.0,
+                    [
+                        self.to_screen_x(poly_line[i_previous][0] as f64, window_width),
+                        self.to_screen_y(poly_line[i_previous][1] as f64, window_height),
+                        self.to_screen_x(poly_line[i][0] as f64, window_width),
+                        self.to_screen_y(poly_line[i][1] as f64, window_height),
+                    ],
+                    context.transform.trans(0.0, 0.0),
+                    graphics,
+                );
+            }
+        }
+    }
+
+    fn draw_stage(
+        &self,
+        context: Context,
+        graphics: &mut G2d,
+        window_width: f64,
+        window_height: f64,
+    ) {
+        let color = [0.3, 0.3, 0.3, 1.0];
+        self.draw_poly_line(context, graphics, window_width, window_height, self.fighting_game.stage.left_walls(), color);
+        self.draw_poly_line(context, graphics, window_width, window_height, self.fighting_game.stage.right_walls(), color);
+        self.draw_poly_line(context, graphics, window_width, window_height, self.fighting_game.stage.grounds(), color);
+        self.draw_poly_line(context, graphics, window_width, window_height, self.fighting_game.stage.ceilings(), color);
+    }
 }

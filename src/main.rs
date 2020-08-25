@@ -8,7 +8,6 @@ mod fixed_timestep;
 mod fighting_game;
 mod fighter;
 mod fighting_stage;
-mod debug_text;
 mod rendered_fighting_game;
 mod interpolated_position;
 
@@ -93,7 +92,6 @@ fn main() {
         time_previous = time_current;
         game.update(delta, &input);
 
-        //game.render(&e, &mut window);
         let window_size = window.size();
         let window_width = window_size.width;
         let window_height = window_size.height;
