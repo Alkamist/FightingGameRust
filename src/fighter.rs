@@ -1,22 +1,8 @@
 use crate::controller_state::ControllerState;
 use crate::button::Button;
 use crate::analog_axis::AnalogAxis;
-
-#[derive(Copy, Clone)]
-pub enum FighterState {
-    Idle,
-    Turn,
-    Walk,
-    Dash,
-    Run,
-    RunBrake,
-    RunTurn,
-    JumpSquat,
-    Airborne,
-    AirDodge,
-    Land,
-    LandSpecial,
-}
+use crate::collision::ECB;
+use crate::game_math::*;
 
 pub struct Fighter {
     ground_friction: f64,
@@ -76,7 +62,7 @@ pub struct Fighter {
     run_turn_has_changed_direction: bool,
     run_turn_has_fully_turned: bool,
 
-    ecb: [[f64; 2]; 4],
+    ecb: ECB,
 }
 
 // Character builders.
@@ -130,12 +116,12 @@ impl Fighter {
             run_turn_was_facing_right_initially: true,
             run_turn_has_changed_direction: false,
             run_turn_has_fully_turned: false,
-            ecb: [
-                [0.0, 0.0],
-                [-2.3, 6.0],
-                [0.0, 12.0],
-                [2.3, 6.0],
-            ],
+            ecb: ECB::new(
+                Point2D::new(0.0, 0.0),
+                Point2D::new(-2.3, 6.0),
+                Point2D::new(0.0, 12.0),
+                Point2D::new(2.3, 6.0),
+            ),
         }
     }
 }
@@ -155,10 +141,14 @@ impl Fighter {
 
 // Public methods.
 impl Fighter {
-    pub fn ecb(&self) -> &[[f64; 2]; 4] { &self.ecb }
+    pub fn ecb(&self) -> &ECB { &self.ecb }
 
     pub fn x(&self) -> f64 { self.x }
+    pub fn set_x(&mut self, value: f64) { self.x= value; }
     pub fn y(&self) -> f64 { self.y }
+    pub fn set_y(&mut self, value: f64) { self.y = value; }
+    pub fn x_previous(&self) -> f64 { self.x_previous }
+    pub fn y_previous(&self) -> f64 { self.y_previous }
     pub fn x_velocity(&self) -> f64 { self.x_velocity }
     pub fn y_velocity(&self) -> f64 { self.y_velocity }
 
@@ -213,8 +203,6 @@ impl Fighter {
             _ => ()
         }
     }
-
-    //pub fn asdfasdf(collision_line: [f64])
 }
 
 // State update logic.
@@ -227,46 +215,50 @@ impl Fighter {
         self.y_previous = self.y;
 
         // Handle state transition.
-        match self.state {
-            FighterState::Idle => self.state_idle_transition(),
-            FighterState::Turn => self.state_turn_transition(),
-            FighterState::Walk => self.state_walk_transition(),
-            FighterState::Dash => self.state_dash_transition(),
-            FighterState::Run => self.state_run_transition(),
-            FighterState::RunBrake => self.state_run_brake_transition(),
-            FighterState::RunTurn => self.state_run_turn_transition(),
-            FighterState::JumpSquat => self.state_jump_squat_transition(),
-            FighterState::Airborne => self.state_airborne_transition(),
-            FighterState::AirDodge => self.state_air_dodge_transition(),
-            FighterState::Land => self.state_land_transition(),
-            FighterState::LandSpecial => self.state_land_special_transition(),
-        }
+        //match self.state {
+        //    FighterState::Idle => self.state_idle_transition(),
+        //    FighterState::Turn => self.state_turn_transition(),
+        //    FighterState::Walk => self.state_walk_transition(),
+        //    FighterState::Dash => self.state_dash_transition(),
+        //    FighterState::Run => self.state_run_transition(),
+        //    FighterState::RunBrake => self.state_run_brake_transition(),
+        //    FighterState::RunTurn => self.state_run_turn_transition(),
+        //    FighterState::JumpSquat => self.state_jump_squat_transition(),
+        //    FighterState::Airborne => self.state_airborne_transition(),
+        //    FighterState::AirDodge => self.state_air_dodge_transition(),
+        //    FighterState::Land => self.state_land_transition(),
+        //    FighterState::LandSpecial => self.state_land_special_transition(),
+        //}
 
         // Handle state update.
-        match self.state {
-            FighterState::Idle => self.state_idle_update(),
-            FighterState::Turn => self.state_turn_update(),
-            FighterState::Walk => self.state_walk_update(),
-            FighterState::Dash => self.state_dash_update(),
-            FighterState::Run => self.state_run_update(),
-            FighterState::RunBrake => self.state_run_brake_update(),
-            FighterState::RunTurn => self.state_run_turn_update(),
-            FighterState::JumpSquat => self.state_jump_squat_update(),
-            FighterState::Airborne => self.state_airborne_update(),
-            FighterState::AirDodge => self.state_air_dodge_update(),
-            FighterState::Land => self.state_land_update(),
-            FighterState::LandSpecial => self.state_land_special_update(),
-        }
+        //match self.state {
+        //    FighterState::Idle => self.state_idle_update(),
+        //    FighterState::Turn => self.state_turn_update(),
+        //    FighterState::Walk => self.state_walk_update(),
+        //    FighterState::Dash => self.state_dash_update(),
+        //    FighterState::Run => self.state_run_update(),
+        //    FighterState::RunBrake => self.state_run_brake_update(),
+        //    FighterState::RunTurn => self.state_run_turn_update(),
+        //    FighterState::JumpSquat => self.state_jump_squat_update(),
+        //    FighterState::Airborne => self.state_airborne_update(),
+        //    FighterState::AirDodge => self.state_air_dodge_update(),
+        //    FighterState::Land => self.state_land_update(),
+        //    FighterState::LandSpecial => self.state_land_special_update(),
+        //}
+
+        self.x_velocity = self.input.left_stick.x_axis.value();
+        self.y_velocity = self.input.left_stick.y_axis.value();
+        self.move_with_velocity();
 
         self.state_frame += 1;
         self.input.update();
 
         // Extremely basic ground collision logic for now.
-        if self.y < 0.0 {
-            self.y = 0.0;
-            self.y_velocity = 0.0;
-            self.land();
-        }
+        //if self.y < 0.0 {
+        //    self.y = 0.0;
+        //    self.y_velocity = 0.0;
+        //    self.land();
+        //}
     }
 
     fn handle_horizontal_air_movement(&mut self) {
@@ -332,9 +324,23 @@ impl Fighter {
     }
 }
 
-
 // ============ STATES ============
 
+#[derive(Copy, Clone)]
+pub enum FighterState {
+    Idle,
+    Turn,
+    Walk,
+    Dash,
+    Run,
+    RunBrake,
+    RunTurn,
+    JumpSquat,
+    Airborne,
+    AirDodge,
+    Land,
+    LandSpecial,
+}
 
 // Idle.
 impl Fighter {

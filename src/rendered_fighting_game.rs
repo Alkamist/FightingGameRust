@@ -64,7 +64,7 @@ impl RenderedFightingGame {
         self.character_position.set(
             self.fighting_game.player.x() as f64,
             self.fighting_game.player.y() as f64,
-        )
+        );
     }
 
     fn to_screen_x(&self, value: f64, window_width: f64) -> f64 {
@@ -95,10 +95,10 @@ impl RenderedFightingGame {
         let character_pixel_y = self.to_screen_y(self.character_position.y(interpolation), window_height);
         let player_ecb = self.player().ecb();
         let screen_ecb = [
-            [self.camera_zoom * (player_ecb[0][0] as f64), self.camera_zoom * -(player_ecb[0][1] as f64)],
-            [self.camera_zoom * (player_ecb[1][0] as f64), self.camera_zoom * -(player_ecb[1][1] as f64)],
-            [self.camera_zoom * (player_ecb[2][0] as f64), self.camera_zoom * -(player_ecb[2][1] as f64)],
-            [self.camera_zoom * (player_ecb[3][0] as f64), self.camera_zoom * -(player_ecb[3][1] as f64)]
+            [self.camera_zoom * (player_ecb.bottom().x()), self.camera_zoom * -(player_ecb.bottom().y())],
+            [self.camera_zoom * (player_ecb.left().x()), self.camera_zoom * -(player_ecb.left().y())],
+            [self.camera_zoom * (player_ecb.top().x()), self.camera_zoom * -(player_ecb.top().y())],
+            [self.camera_zoom * (player_ecb.right().x()), self.camera_zoom * -(player_ecb.right().y())]
         ];
         polygon(
             [0.5, 0.5, 0.5, 1.0],
@@ -109,7 +109,7 @@ impl RenderedFightingGame {
 
         // Draw a way to tell which way the character is facing.
         let character_facing_width = 2.0 * self.camera_zoom;
-        let character_facing_offset = (character_facing_width) * (self.player().facing_direction() as f64);
+        let character_facing_offset = (character_facing_width + 6.0) * self.player().facing_direction();
         rectangle(
             [0.9, 0.9, 0.9, 1.0],
             rectangle::rectangle_by_corners(0.0, 0.0, character_facing_width, character_facing_width),
@@ -202,10 +202,10 @@ impl RenderedFightingGame {
                     color,
                     1.0,
                     [
-                        self.to_screen_x(poly_line[i_previous][0] as f64, window_width),
-                        self.to_screen_y(poly_line[i_previous][1] as f64, window_height),
-                        self.to_screen_x(poly_line[i][0] as f64, window_width),
-                        self.to_screen_y(poly_line[i][1] as f64, window_height),
+                        self.to_screen_x(poly_line[i_previous][0], window_width),
+                        self.to_screen_y(poly_line[i_previous][1], window_height),
+                        self.to_screen_x(poly_line[i][0], window_width),
+                        self.to_screen_y(poly_line[i][1], window_height),
                     ],
                     context.transform.trans(0.0, 0.0),
                     graphics,

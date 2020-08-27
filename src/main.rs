@@ -1,5 +1,7 @@
 #![windows_subsystem="windows"]
 
+mod game_math;
+mod collision;
 mod button;
 mod analog_axis;
 mod analog_stick;
