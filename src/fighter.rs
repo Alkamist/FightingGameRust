@@ -40,12 +40,17 @@ pub struct Fighter {
     turn_frames: u32,
     run_brake_frames: u32,
 
-    x: f64,
-    y: f64,
-    x_velocity: f64,
-    y_velocity: f64,
-    x_previous: f64,
-    y_previous: f64,
+    position: Point2D,
+    position_previous: Point2D,
+    velocity: Vector2D,
+
+    //x: f64,
+    //y: f64,
+    //x_velocity: f64,
+    //y_velocity: f64,
+    //x_previous: f64,
+    //y_previous: f64,
+
     air_jumps_left: u32,
     is_facing_right: bool,
     was_facing_right: bool,
@@ -63,6 +68,7 @@ pub struct Fighter {
     run_turn_has_fully_turned: bool,
 
     ecb: ECB,
+    ground_line: Option<LineSegment2D>,
 }
 
 // Character builders.
@@ -98,17 +104,14 @@ impl Fighter {
             slow_dash_back_frames: 5,
             turn_frames: 11,
             run_brake_frames: 18,
-            x: 0.0,
-            y: 0.0,
-            x_velocity: 0.0,
-            y_velocity: 0.0,
-            x_previous: 0.0,
-            y_previous: 0.0,
+            position: Point2D::new(0.0, 0.0),
+            position_previous: Point2D::new(0.0, 0.0),
+            velocity: Vector2D::new(0.0, 0.0),
             air_jumps_left: 1,
             is_facing_right: true,
             was_facing_right: true,
-            state: FighterState::Idle,
-            state_previous: FighterState::Idle,
+            state: FighterState::Airborne,
+            state_previous: FighterState::Airborne,
             state_frame: 0,
             input: ControllerState::new(0.2875),
             dash_should_reset_velocity: false,
@@ -122,6 +125,7 @@ impl Fighter {
                 Point2D::new(0.0, 12.0),
                 Point2D::new(2.3, 6.0),
             ),
+            ground_line: None,
         }
     }
 }
@@ -143,14 +147,18 @@ impl Fighter {
 impl Fighter {
     pub fn ecb(&self) -> &ECB { &self.ecb }
 
-    pub fn x(&self) -> f64 { self.x }
-    pub fn set_x(&mut self, value: f64) { self.x= value; }
-    pub fn y(&self) -> f64 { self.y }
-    pub fn set_y(&mut self, value: f64) { self.y = value; }
-    pub fn x_previous(&self) -> f64 { self.x_previous }
-    pub fn y_previous(&self) -> f64 { self.y_previous }
-    pub fn x_velocity(&self) -> f64 { self.x_velocity }
-    pub fn y_velocity(&self) -> f64 { self.y_velocity }
+    pub fn position(&self) -> Point2D { self.position }
+
+    pub fn x(&self) -> f64 { self.position.x() }
+    pub fn set_x(&mut self, value: f64) { self.position.set_x(value); }
+    pub fn y(&self) -> f64 { self.position.y() }
+    pub fn set_y(&mut self, value: f64) { self.position.set_y(value); }
+    pub fn x_previous(&self) -> f64 { self.position_previous.x() }
+    pub fn y_previous(&self) -> f64 { self.position_previous.y() }
+    pub fn x_velocity(&self) -> f64 { self.velocity.x() }
+    pub fn set_x_velocity(&mut self, value: f64) { self.velocity.set_x(value); }
+    pub fn y_velocity(&self) -> f64 { self.velocity.y() }
+    pub fn set_y_velocity(&mut self, value: f64) { self.velocity.set_y(value); }
 
     pub fn x_axis(&self) -> &AnalogAxis { &self.input.left_stick.x_axis }
     pub fn y_axis(&self) -> &AnalogAxis { &self.input.left_stick.y_axis }
@@ -203,6 +211,10 @@ impl Fighter {
             _ => ()
         }
     }
+
+    pub fn set_ground_line(&mut self, ground_line: Option<LineSegment2D>) {
+        self.ground_line = ground_line
+    }
 }
 
 // State update logic.
@@ -211,100 +223,117 @@ impl Fighter {
         self.input.copy_inputs(&input);
 
         self.was_facing_right = self.is_facing_right;
-        self.x_previous = self.x;
-        self.y_previous = self.y;
+        self.position_previous = self.position;
 
         // Handle state transition.
-        //match self.state {
-        //    FighterState::Idle => self.state_idle_transition(),
-        //    FighterState::Turn => self.state_turn_transition(),
-        //    FighterState::Walk => self.state_walk_transition(),
-        //    FighterState::Dash => self.state_dash_transition(),
-        //    FighterState::Run => self.state_run_transition(),
-        //    FighterState::RunBrake => self.state_run_brake_transition(),
-        //    FighterState::RunTurn => self.state_run_turn_transition(),
-        //    FighterState::JumpSquat => self.state_jump_squat_transition(),
-        //    FighterState::Airborne => self.state_airborne_transition(),
-        //    FighterState::AirDodge => self.state_air_dodge_transition(),
-        //    FighterState::Land => self.state_land_transition(),
-        //    FighterState::LandSpecial => self.state_land_special_transition(),
-        //}
+        match self.state {
+            FighterState::Idle => self.state_idle_transition(),
+            FighterState::Turn => self.state_turn_transition(),
+            FighterState::Walk => self.state_walk_transition(),
+            FighterState::Dash => self.state_dash_transition(),
+            FighterState::Run => self.state_run_transition(),
+            FighterState::RunBrake => self.state_run_brake_transition(),
+            FighterState::RunTurn => self.state_run_turn_transition(),
+            FighterState::JumpSquat => self.state_jump_squat_transition(),
+            FighterState::Airborne => self.state_airborne_transition(),
+            FighterState::AirDodge => self.state_air_dodge_transition(),
+            FighterState::Land => self.state_land_transition(),
+            FighterState::LandSpecial => self.state_land_special_transition(),
+        }
 
         // Handle state update.
-        //match self.state {
-        //    FighterState::Idle => self.state_idle_update(),
-        //    FighterState::Turn => self.state_turn_update(),
-        //    FighterState::Walk => self.state_walk_update(),
-        //    FighterState::Dash => self.state_dash_update(),
-        //    FighterState::Run => self.state_run_update(),
-        //    FighterState::RunBrake => self.state_run_brake_update(),
-        //    FighterState::RunTurn => self.state_run_turn_update(),
-        //    FighterState::JumpSquat => self.state_jump_squat_update(),
-        //    FighterState::Airborne => self.state_airborne_update(),
-        //    FighterState::AirDodge => self.state_air_dodge_update(),
-        //    FighterState::Land => self.state_land_update(),
-        //    FighterState::LandSpecial => self.state_land_special_update(),
-        //}
+        match self.state {
+            FighterState::Idle => self.state_idle_update(),
+            FighterState::Turn => self.state_turn_update(),
+            FighterState::Walk => self.state_walk_update(),
+            FighterState::Dash => self.state_dash_update(),
+            FighterState::Run => self.state_run_update(),
+            FighterState::RunBrake => self.state_run_brake_update(),
+            FighterState::RunTurn => self.state_run_turn_update(),
+            FighterState::JumpSquat => self.state_jump_squat_update(),
+            FighterState::Airborne => self.state_airborne_update(),
+            FighterState::AirDodge => self.state_air_dodge_update(),
+            FighterState::Land => self.state_land_update(),
+            FighterState::LandSpecial => self.state_land_special_update(),
+        }
 
-        self.x_velocity = self.input.left_stick.x_axis.value();
-        self.y_velocity = self.input.left_stick.y_axis.value();
-        self.move_with_velocity();
+        //self.x_velocity = self.input.left_stick.x_axis.value();
+        //self.y_velocity = self.input.left_stick.y_axis.value();
+        //self.move_with_velocity();
 
         self.state_frame += 1;
         self.input.update();
-
-        // Extremely basic ground collision logic for now.
-        //if self.y < 0.0 {
-        //    self.y = 0.0;
-        //    self.y_velocity = 0.0;
-        //    self.land();
-        //}
     }
 
     fn handle_horizontal_air_movement(&mut self) {
         if !self.x_axis().is_active() {
-            self.x_velocity = self.apply_friction(self.x_velocity, self.air_friction);
+            self.apply_movement_friction(self.air_friction);
         }
         else {
-            self.x_velocity = self.apply_acceleration(self.x_velocity,
-                                                      self.x_axis(),
-                                                      self.air_base_acceleration,
-                                                      self.air_axis_acceleration,
-                                                      self.air_max_velocity,
-                                                      self.air_friction);
+            self.apply_movement_acceleration(
+                self.air_base_acceleration,
+                self.air_axis_acceleration,
+                self.air_max_velocity,
+                self.air_friction,
+            );
         }
     }
 
     fn handle_fast_fall(&mut self) {
-        if self.y_velocity <= 0.0 && self.y_axis().value() < 0.0 && self.y_axis_smashed() {
-            self.y_velocity = -self.fast_fall_velocity;
+        if self.y_velocity() <= 0.0 && self.y_axis().value() < 0.0 && self.y_axis_smashed() {
+            self.set_y_velocity(-self.fast_fall_velocity);
         }
     }
 
     fn handle_gravity(&mut self) {
-        self.y_velocity -= self.gravity.min(self.fall_velocity + self.y_velocity).max(0.0);
+        self.set_y_velocity(self.y_velocity() - self.gravity.min(self.fall_velocity + self.y_velocity()).max(0.0));
     }
 
     fn move_with_velocity(&mut self) {
-        self.x += self.x_velocity;
-        self.y += self.y_velocity;
+        self.set_x(self.x() + self.x_velocity());
+        self.set_y(self.y() + self.y_velocity());
     }
 
-    fn apply_friction(&self, velocity: f64, friction: f64) -> f64 {
+    fn apply_movement_friction(&mut self, friction: f64) {
+        self.set_x_velocity(self.apply_friction_to_value(self.x_velocity(), friction));
+    }
+
+    fn apply_friction_to_value(&self, velocity: f64, friction: f64) -> f64 {
         velocity - velocity.signum() * velocity.abs().min(friction)
     }
 
-    fn apply_acceleration(&self,
-                          velocity: f64,
-                          axis: &AnalogAxis,
-                          base_acceleration: f64,
-                          axis_acceleration: f64,
-                          max_velocity: f64,
-                          friction: f64) -> f64 {
+    fn apply_movement_acceleration(
+        &mut self,
+        base_acceleration: f64,
+        axis_acceleration: f64,
+        max_velocity: f64,
+        friction: f64,
+    ) {
+        self.set_x_velocity(
+            self.apply_acceleration_to_value(
+                self.x_velocity(),
+                self.x_axis(),
+                base_acceleration,
+                axis_acceleration,
+                max_velocity,
+                friction,
+            )
+        );
+    }
+
+    fn apply_acceleration_to_value(
+        &self,
+        velocity: f64,
+        axis: &AnalogAxis,
+        base_acceleration: f64,
+        axis_acceleration: f64,
+        max_velocity: f64,
+        friction: f64
+    ) -> f64 {
         let mut new_velocity = velocity;
 
         if velocity.abs() > max_velocity {
-            new_velocity = self.apply_friction(velocity, friction);
+            new_velocity = self.apply_friction_to_value(velocity, friction);
         }
 
         let mut acceleration = axis.direction() * base_acceleration + axis.value() * axis_acceleration;
@@ -362,7 +391,7 @@ impl Fighter {
     }
 
     fn state_idle_update(&mut self) {
-        self.x_velocity = self.apply_friction(self.x_velocity, self.ground_friction);
+        self.apply_movement_friction(self.ground_friction);
         self.move_with_velocity();
     }
 }
@@ -391,7 +420,7 @@ impl Fighter {
             match self.state_previous {
                 FighterState::Dash => {
                     // I'm unsure where the 1.73 here comes from but it is necessary for now.
-                    self.x_velocity -= self.x_velocity.signum() * 1.73;
+                    self.set_x_velocity(self.x_velocity() - self.x_velocity().signum() * 1.73);
                 },
                 _ => ()
             }
@@ -400,7 +429,7 @@ impl Fighter {
         // Not quite right. Turn friction in melee applies on the first frame while walking,
         // but not during the one frame of turn seen while dash dancing. I need to implement that.
         if self.state_frame > 1 {
-            self.x_velocity = self.apply_friction(self.x_velocity, self.ground_friction * 2.0);
+            self.apply_movement_friction(2.0 * self.ground_friction);
         }
         if self.x_axis_is_backward() && self.state_frame == self.slow_dash_back_frames {
             self.is_facing_right = self.x_axis().value() >= 0.0;
@@ -427,26 +456,26 @@ impl Fighter {
     fn state_walk_update(&mut self) {
         if self.state_frame == 0 {
             if self.x_axis().is_active() {
-                self.x_velocity += self.facing_direction() * (0.1 + 0.2 * self.x_axis().value());
+                self.set_x_velocity(self.x_velocity() + self.facing_direction() * (0.1 + 0.2 * self.x_axis().value()));
             }
         }
 
         let target_velocity = self.walk_max_velocity * self.x_axis().value();
 
-        if self.x_velocity.abs() > target_velocity.abs() {
-            self.x_velocity = self.apply_friction(self.x_velocity, self.ground_friction * 2.0);
+        if self.x_velocity().abs() > target_velocity.abs() {
+            self.apply_movement_friction(2.0 * self.ground_friction);
         }
         else if self.x_axis().is_active() && self.state_frame >= 1 {
             // This isn't quite right but close-ish, not sure what the real acceleration calculation is.
-            let acceleration = (target_velocity - self.x_velocity) * 0.25 * self.x_axis().magnitude();
+            let acceleration = (target_velocity - self.x_velocity()) * 0.25 * self.x_axis().magnitude();
 
-            self.x_velocity += acceleration;
+            self.set_x_velocity(self.x_velocity() + acceleration);
 
-            let going_left_too_fast = target_velocity < 0.0 && self.x_velocity < target_velocity;
-            let going_right_too_fast = target_velocity > 0.0 && self.x_velocity > target_velocity;
+            let going_left_too_fast = target_velocity < 0.0 && self.x_velocity() < target_velocity;
+            let going_right_too_fast = target_velocity > 0.0 && self.x_velocity() > target_velocity;
 
             if going_left_too_fast || going_right_too_fast {
-                self.x_velocity = target_velocity;
+                self.set_x_velocity(target_velocity);
             }
         }
         self.move_with_velocity();
@@ -488,27 +517,27 @@ impl Fighter {
 
         if self.state_frame == 1 {
             if self.dash_should_reset_velocity {
-                self.x_velocity = 0.0;
+                self.set_x_velocity(0.0);
                 self.dash_should_reset_velocity = false;
             }
 
-            self.x_velocity += self.dash_start_velocity * self.facing_direction();
-            if self.x_velocity.abs() > self.dash_max_velocity {
-                self.x_velocity = self.dash_max_velocity * self.facing_direction();
+            self.set_x_velocity(self.x_velocity() + self.dash_start_velocity * self.facing_direction());
+            if self.x_velocity().abs() > self.dash_max_velocity {
+                self.set_x_velocity(self.dash_max_velocity * self.facing_direction());
             }
         }
 
         if self.state_frame >= 1 {
             if !self.x_axis().is_active() {
-                self.x_velocity = self.apply_friction(self.x_velocity, self.ground_friction);
+                self.apply_movement_friction(self.ground_friction);
             }
             else {
-                self.x_velocity = self.apply_acceleration(self.x_velocity,
-                                                          self.x_axis(),
-                                                          self.dash_base_acceleration,
-                                                          self.dash_axis_acceleration,
-                                                          self.dash_max_velocity,
-                                                          self.ground_friction);
+                self.apply_movement_acceleration(
+                    self.dash_base_acceleration,
+                    self.dash_axis_acceleration,
+                    self.dash_max_velocity,
+                    self.ground_friction,
+                );
             }
         }
         self.move_with_velocity();
@@ -530,10 +559,10 @@ impl Fighter {
     }
 
     fn state_run_update(&mut self) {
-        let run_acceleration = ((self.dash_max_velocity * self.x_axis().value()) - self.x_velocity)
+        let run_acceleration = ((self.dash_max_velocity * self.x_axis().value()) - self.x_velocity())
                              * (1.0 / (2.5 * self.dash_max_velocity))
                              * (self.dash_axis_acceleration + (self.dash_base_acceleration / self.x_axis().magnitude()));
-        self.x_velocity += run_acceleration;
+        self.set_x_velocity(self.x_velocity() + run_acceleration);
         self.move_with_velocity();
     }
 }
@@ -559,7 +588,7 @@ impl Fighter {
     }
 
     fn state_run_brake_update(&mut self) {
-        self.x_velocity = self.apply_friction(self.x_velocity, self.ground_friction);
+        self.apply_movement_friction(self.ground_friction);
         self.move_with_velocity();
     }
 }
@@ -592,8 +621,8 @@ impl Fighter {
             self.run_turn_has_fully_turned = false;
         }
 
-        if self.run_turn_was_facing_right_initially && self.x_velocity <= 0.0
-        || !self.run_turn_was_facing_right_initially && self.x_velocity >= 0.0 {
+        if self.run_turn_was_facing_right_initially && self.x_velocity() <= 0.0
+        || !self.run_turn_was_facing_right_initially && self.x_velocity() >= 0.0 {
             self.run_turn_has_fully_turned = true;
         }
 
@@ -605,15 +634,15 @@ impl Fighter {
         if !self.x_axis().is_active()
         || (!self.run_turn_has_fully_turned && self.x_axis_is_forward())
         || (self.run_turn_has_fully_turned && self.x_axis_is_backward()) {
-            self.x_velocity = self.apply_friction(self.x_velocity, self.ground_friction);
+            self.apply_movement_friction(self.ground_friction);
         }
         else {
-            self.x_velocity = self.apply_acceleration(self.x_velocity,
-                                                      self.x_axis(),
-                                                      self.dash_base_acceleration,
-                                                      self.dash_axis_acceleration,
-                                                      self.dash_max_velocity,
-                                                      self.ground_friction);
+            self.apply_movement_acceleration(
+                self.dash_base_acceleration,
+                self.dash_axis_acceleration,
+                self.dash_max_velocity,
+                self.ground_friction,
+            );
         }
 
         self.move_with_velocity();
@@ -637,7 +666,7 @@ impl Fighter {
     }
 
     fn state_jump_squat_update(&mut self) {
-        self.x_velocity = self.apply_friction(self.x_velocity, self.ground_friction * 2.0);
+        self.apply_movement_friction(2.0 * self.ground_friction);
         self.move_with_velocity();
     }
 }
@@ -655,17 +684,17 @@ impl Fighter {
             match self.state_previous {
                 FighterState::JumpSquat => {
                     // Handle changing horizontal velocity when jumping off of the ground based on stick x axis.
-                    self.x_velocity = (self.x_velocity * self.jump_velocity_dampening) + (self.x_axis().value() * self.jump_start_horizontal_velocity);
-                    if self.x_velocity.abs() > self.jump_max_horizontal_velocity {
-                        self.x_velocity = self.x_velocity.signum() * self.jump_max_horizontal_velocity;
+                    self.set_x_velocity((self.x_velocity() * self.jump_velocity_dampening) + (self.x_axis().value() * self.jump_start_horizontal_velocity));
+                    if self.x_velocity().abs() > self.jump_max_horizontal_velocity {
+                        self.set_x_velocity(self.x_velocity().signum() * self.jump_max_horizontal_velocity);
                     }
 
                     // Handle short hopping and full hopping.
                     if self.jump_is_active() {
-                        self.y_velocity = self.full_hop_velocity;
+                        self.set_y_velocity(self.full_hop_velocity);
                     }
                     else {
-                        self.y_velocity = self.short_hop_velocity;
+                        self.set_y_velocity(self.short_hop_velocity);
                     }
                 },
                 _ => ()
@@ -675,8 +704,8 @@ impl Fighter {
         if self.state_frame >= 1 {
             // Handle air jumps.
             if self.should_jump() && self.air_jumps_left > 0 {
-                self.x_velocity = self.x_axis().value() * self.air_jump_horizontal_axis_multiplier;
-                self.y_velocity = self.full_hop_velocity * self.air_jump_velocity_multiplier;
+                self.set_x_velocity(self.x_axis().value() * self.air_jump_horizontal_axis_multiplier);
+                self.set_y_velocity(self.full_hop_velocity * self.air_jump_velocity_multiplier);
                 self.air_jumps_left -= 1;
             }
             self.handle_horizontal_air_movement();
@@ -695,18 +724,18 @@ impl Fighter {
         if self.state_frame == 0 {
             if self.x_axis().is_active() || self.y_axis().is_active() {
                 let stick_angle = self.input.left_stick.angle();
-                self.x_velocity = 3.1 * stick_angle.cos();
-                self.y_velocity = 3.1 * stick_angle.sin();
+                self.set_x_velocity(3.1 * stick_angle.cos());
+                self.set_y_velocity(3.1 * stick_angle.sin());
             }
             else {
-                self.x_velocity = 0.0;
-                self.y_velocity = 0.0;
+                self.set_x_velocity(0.0);
+                self.set_y_velocity(0.0);
             }
         }
 
         if self.state_frame < 30 {
-            self.x_velocity *= 0.9;
-            self.y_velocity *= 0.9;
+            self.set_x_velocity(self.x_velocity() * 0.9);
+            self.set_y_velocity(self.y_velocity() * 0.9);
         }
         else {
             self.handle_horizontal_air_movement();
@@ -727,11 +756,11 @@ impl Fighter {
 
     fn state_land_update(&mut self) {
         if self.state_frame == 0 {
-            self.y_velocity = 0.0;
+            self.set_y_velocity(0.0);
             self.air_jumps_left = self.air_jumps;
         }
 
-        self.x_velocity = self.apply_friction(self.x_velocity, self.ground_friction * 2.0);
+        self.apply_movement_friction(2.0 * self.ground_friction);
         self.move_with_velocity();
     }
 }
@@ -764,12 +793,12 @@ impl Fighter {
 
     fn state_land_special_update(&mut self) {
         if self.state_frame == 0 {
-            self.y_velocity = 0.0;
+            self.set_y_velocity(0.0);
             self.air_jumps_left = self.air_jumps;
         }
 
         let friction_multiplier = if self.state_frame < 3 { 2.0 } else { 1.0 };
-        self.x_velocity = self.apply_friction(self.x_velocity, self.ground_friction * friction_multiplier);
+        self.apply_movement_friction(friction_multiplier * self.ground_friction);
         self.move_with_velocity();
     }
 }

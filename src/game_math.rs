@@ -71,6 +71,30 @@ impl LineSegment2D {
     pub fn y_intercept(&self) -> f64 { self.y_intercept }
     pub fn length(&self) -> f64 { self.length }
 
+    pub fn top_normal(&self) -> Vector2D {
+        let left_point = self.left_point();
+        let right_point = self.right_point();
+        let length = self.length();
+        if length > 0.0 {
+            Vector2D::new((left_point.y - right_point.y) / length, (right_point.x - left_point.x) / length)
+        }
+        else {
+            Vector2D::new(0.0, 0.0)
+        }
+    }
+
+    pub fn bottom_normal(&self) -> Vector2D {
+        let left_point = self.left_point();
+        let right_point = self.right_point();
+        let length = self.length();
+        if length > 0.0 {
+            Vector2D::new((right_point.y - left_point.y) / length, (left_point.x - right_point.x) / length)
+        }
+        else {
+            Vector2D::new(0.0, 0.0)
+        }
+    }
+
     pub fn contains_colinear_point(&self, point: Point2D) -> bool {
         let p = self.points[0];
         let r = self.points[1];
@@ -110,7 +134,7 @@ impl LineSegment2D {
     }
 
     pub fn get_intersection(&self, line: LineSegment2D) -> Option<Point2D> {
-        if let Some(intersection) = self.get_intersection_with_possible_NaN(line) {
+        if let Some(intersection) = self.get_intersection_with_possible_nan(line) {
             if intersection.x().is_nan() || intersection.y().is_nan() {
                 None
             }
@@ -143,7 +167,7 @@ impl LineSegment2D {
         else { false }
     }
 
-    fn get_intersection_with_possible_NaN(&self, line: LineSegment2D) -> Option<Point2D> {
+    fn get_intersection_with_possible_nan(&self, line: LineSegment2D) -> Option<Point2D> {
         let left_point = self.left_point();
         let self_y_intercept = self.y_intercept();
         let self_slope = self.slope();
@@ -250,6 +274,10 @@ impl Vector2D {
         let magnitude = self.magnitude();
         if magnitude > 0.0 { Vector2D::new(self.x() / magnitude, self.y() / magnitude) }
         else { Vector2D::new(0.0, 0.0) }
+    }
+
+    pub fn dot(&self, vector: Vector2D) -> f64 {
+        self.x() * vector.x() + self.y() * vector.y()
     }
 
     fn calculate_magnitude(&self) -> f64 { (self.x().powi(2) + self.y().powi(2)).sqrt() }

@@ -47,17 +47,20 @@ impl FightingGame {
             if ground_length > 1 {
                 for i in 1..ground_length {
                     let i_previous = i - 1;
-                    let ground_line_line = LineSegment2D::new(
+                    let ground_line = LineSegment2D::new(
                         Point2D::new(ground[i_previous][0], ground[i_previous][1]),
                         Point2D::new(ground[i][0], ground[i][1]),
                     );
                     let position_previous = Point2D::new(self.player.x_previous(), self.player.y_previous());
                     let position = Point2D::new(self.player.x(), self.player.y());
-                    if let Some(collision_position) = self.player.ecb().get_ground_line_collision_position(position_previous, position, ground_line_line) {
-                        if self.player.l_button().is_pressed() {
-                            println!("{}, {}", collision_position.x(), collision_position.y());
+                    if let Some(collision_position) = self.player.ecb().get_ground_line_collision_position(position_previous, position, ground_line) {
+                        let player_velocity = Vector2D::new(self.player.x_velocity(), self.player.y_velocity());
+                        let ground_bottom_normal = ground_line.bottom_normal();
+                        if player_velocity.dot(ground_bottom_normal) > 0.0 {
                             self.player.set_x(collision_position.x());
                             self.player.set_y(collision_position.y());
+                            self.player.set_ground_line(Some(ground_line));
+                            self.player.land();
                         }
                     }
                 }
