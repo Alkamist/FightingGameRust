@@ -7,6 +7,8 @@ use crate::fighting_game::FightingGame;
 use crate::interpolated_position::InterpolatedPosition;
 use crate::controller_state::ControllerState;
 use crate::fighter::Fighter;
+use crate::game_math::*;
+use crate::collision::*;
 
 pub struct RenderedFightingGame {
     fighting_game: FightingGame,
@@ -191,26 +193,28 @@ impl RenderedFightingGame {
         graphics: &mut G2d,
         window_width: f64,
         window_height: f64,
-        poly_line: &Vec<[f64; 2]>,
-        color: types::Color,
+        poly_line: &CollisionPolyLine,
     ) {
-        let poly_line_length = poly_line.len();
-        if poly_line_length > 1 {
-            for i in 1..poly_line_length {
-                let i_previous = i - 1;
-                line(
-                    color,
-                    1.0,
-                    [
-                        self.to_screen_x(poly_line[i_previous][0], window_width),
-                        self.to_screen_y(poly_line[i_previous][1], window_height),
-                        self.to_screen_x(poly_line[i][0], window_width),
-                        self.to_screen_y(poly_line[i][1], window_height),
-                    ],
-                    context.transform.trans(0.0, 0.0),
-                    graphics,
-                );
-            }
+        let collision_lines = poly_line.collision_lines();
+        for collision_line in collision_lines {
+            let color = {
+                if collision_line.is_ground() { [0.3, 0.3, 0.3, 1.0] }
+                else { [0.9, 0.3, 0.3, 1.0] }
+            };
+
+            let collision_line_segment = collision_line.line();
+            line(
+                color,
+                1.0,
+                [
+                    self.to_screen_x(collision_line_segment.left_point().x(), window_width),
+                    self.to_screen_y(collision_line_segment.left_point().y(), window_height),
+                    self.to_screen_x(collision_line_segment.right_point().x(), window_width),
+                    self.to_screen_y(collision_line_segment.right_point().y(), window_height),
+                ],
+                context.transform.trans(0.0, 0.0),
+                graphics,
+            );
         }
     }
 
@@ -221,22 +225,8 @@ impl RenderedFightingGame {
         window_width: f64,
         window_height: f64,
     ) {
-        let color = [0.3, 0.3, 0.3, 1.0];
-
-        for wall in self.fighting_game.stage.left_walls() {
-            self.draw_poly_line(context, graphics, window_width, window_height, wall, color);
-        }
-        for wall in self.fighting_game.stage.right_walls() {
-            self.draw_poly_line(context, graphics, window_width, window_height, wall, color);
-        }
-        for ground in self.fighting_game.stage.grounds() {
-            self.draw_poly_line(context, graphics, window_width, window_height, ground, color);
-        }
-        for ceiling in self.fighting_game.stage.ceilings() {
-            self.draw_poly_line(context, graphics, window_width, window_height, ceiling, color);
-        }
-        for platform in self.fighting_game.stage.platforms() {
-            self.draw_poly_line(context, graphics, window_width, window_height, platform, color);
+        for poly_line in self.fighting_game.collision_poly_lines() {
+            self.draw_poly_line(context, graphics, window_width, window_height, &poly_line);
         }
     }
 }

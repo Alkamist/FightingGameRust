@@ -148,13 +148,15 @@ impl Fighter {
     pub fn ecb(&self) -> &ECB { &self.ecb }
 
     pub fn position(&self) -> Point2D { self.position }
-
+    pub fn position_previous(&self) -> Point2D { self.position_previous }
     pub fn x(&self) -> f64 { self.position.x() }
     pub fn set_x(&mut self, value: f64) { self.position.set_x(value); }
     pub fn y(&self) -> f64 { self.position.y() }
     pub fn set_y(&mut self, value: f64) { self.position.set_y(value); }
     pub fn x_previous(&self) -> f64 { self.position_previous.x() }
     pub fn y_previous(&self) -> f64 { self.position_previous.y() }
+
+    pub fn velocity(&self) -> Vector2D { self.velocity }
     pub fn x_velocity(&self) -> f64 { self.velocity.x() }
     pub fn set_x_velocity(&mut self, value: f64) { self.velocity.set_x(value); }
     pub fn y_velocity(&self) -> f64 { self.velocity.y() }
@@ -202,6 +204,11 @@ impl Fighter {
             FighterState::Land => String::from("Land"),
             FighterState::LandSpecial => String::from("LandSpecial"),
         }
+    }
+
+    pub fn can_land(&self) -> bool {
+        self.state == FighterState::Airborne
+        || self.state == FighterState::AirDodge
     }
 
     pub fn land(&mut self) {
@@ -355,7 +362,7 @@ impl Fighter {
 
 // ============ STATES ============
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, PartialEq)]
 pub enum FighterState {
     Idle,
     Turn,

@@ -9,7 +9,6 @@ mod controller_state;
 mod fixed_timestep;
 mod fighting_game;
 mod fighter;
-mod fighting_stage;
 mod rendered_fighting_game;
 mod interpolated_position;
 mod keyboard_controller;

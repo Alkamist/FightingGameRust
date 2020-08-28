@@ -1,12 +1,12 @@
 use crate::controller_state::ControllerState;
 use crate::fighter::Fighter;
-use crate::fighting_stage::FightingStage;
 use crate::game_math::*;
+use crate::collision::*;
 
 pub struct FightingGame {
     pub input: ControllerState,
     pub player: Fighter,
-    pub stage: FightingStage,
+    collision_poly_lines: Vec<CollisionPolyLine>,
     is_paused: bool,
 }
 
@@ -16,9 +16,46 @@ impl FightingGame {
             input: ControllerState::new(0.2875),
             player: Fighter::fox(),
             is_paused: false,
-            stage: FightingStage::new(),
+            collision_poly_lines: vec![
+                CollisionPolyLine::new(
+                    vec![
+                        Point2D::new(-54.0, -100.0),
+                        Point2D::new(-54.0, -47.0),
+                        Point2D::new(-53.0, -46.0),
+                        Point2D::new(-53.0, -31.0),
+                        Point2D::new(-54.0, -30.0),
+                        Point2D::new(-54.0, -28.0),
+                        Point2D::new(-53.0, -27.0),
+                        Point2D::new(-53.0, -12.0),
+                        Point2D::new(-54.0, -11.0),
+                        Point2D::new(-55.0, -8.0),
+                        Point2D::new(-56.0, -7.0),
+
+                        Point2D::new(-56.0, -3.5),
+                        Point2D::new(-39.0, 0.0),
+                        Point2D::new(39.0, 0.0),
+                        Point2D::new(56.0, -3.5),
+
+                        Point2D::new(56.0, -7.0),
+                        Point2D::new(55.0, -8.0),
+                        Point2D::new(54.0, -11.0),
+                        Point2D::new(53.0, -12.0),
+                        Point2D::new(53.0, -27.0),
+                        Point2D::new(54.0, -28.0),
+                        Point2D::new(54.0, -30.0),
+                        Point2D::new(53.0, -31.0),
+                        Point2D::new(53.0, -46.0),
+                        Point2D::new(54.0, -47.0),
+                        Point2D::new(54.0, -100.0),
+
+                        Point2D::new(-54.0, -100.0),
+                    ]
+                ),
+            ],
         }
     }
+
+    pub fn collision_poly_lines(&self) -> &Vec<CollisionPolyLine> { &self.collision_poly_lines }
 
     pub fn update(&mut self, input: &ControllerState) {
         self.input.copy_inputs(input);
@@ -35,33 +72,28 @@ impl FightingGame {
 
         if !self.is_paused || frame_advance {
             self.player.update(&self.input);
-            self.resolve_ground_collisions();
+            self.resolve_collisions();
         }
 
         self.input.update();
     }
 
-    fn resolve_ground_collisions(&mut self) {
-        for ground in self.stage.grounds() {
-            let ground_length = ground.len();
-            if ground_length > 1 {
-                for i in 1..ground_length {
-                    let i_previous = i - 1;
-                    let ground_line = LineSegment2D::new(
-                        Point2D::new(ground[i_previous][0], ground[i_previous][1]),
-                        Point2D::new(ground[i][0], ground[i][1]),
-                    );
-                    let position_previous = Point2D::new(self.player.x_previous(), self.player.y_previous());
-                    let position = Point2D::new(self.player.x(), self.player.y());
-                    if let Some(collision_position) = self.player.ecb().get_ground_line_collision_position(position_previous, position, ground_line) {
-                        let player_velocity = Vector2D::new(self.player.x_velocity(), self.player.y_velocity());
-                        let ground_bottom_normal = ground_line.bottom_normal();
-                        if player_velocity.dot(ground_bottom_normal) > 0.0 {
-                            self.player.set_x(collision_position.x());
-                            self.player.set_y(collision_position.y());
-                            self.player.set_ground_line(Some(ground_line));
-                            self.player.land();
-                        }
+    fn resolve_collisions(&mut self) {
+        for poly_line in &self.collision_poly_lines {
+            let collision_lines = poly_line.collision_lines();
+            for collision_line in collision_lines {
+                let collision_line_segment = collision_line.line();
+                let possible_collision = self.player.ecb().get_ground_line_collision_position(
+                    self.player.position_previous(),
+                    self.player.position(),
+                    collision_line_segment,
+                );
+                if let Some(collision_position) = possible_collision {
+                    if self.player.can_land() && self.player.velocity().dot(collision_line_segment.bottom_normal()) > 0.0 {
+                        self.player.set_x(collision_position.x());
+                        self.player.set_y(collision_position.y());
+                        //self.player.set_ground_line(Some(ground_line));
+                        self.player.land();
                     }
                 }
             }

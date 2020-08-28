@@ -52,3 +52,56 @@ impl ECB {
     pub fn top(&self) -> Point2D { self.top }
     pub fn right(&self) -> Point2D { self.right }
 }
+
+pub struct CollisionLine {
+    line: LineSegment2D,
+}
+
+impl CollisionLine {
+    pub fn new(line: LineSegment2D) -> CollisionLine {
+        CollisionLine {
+            line,
+        }
+    }
+
+    pub fn line(&self) -> LineSegment2D { self.line }
+    pub fn is_ground(&self) -> bool {
+        self.line.slope().abs() < 1.0
+    }
+}
+
+pub struct CollisionPolyLine {
+    points: Vec<Point2D>,
+    lines: Vec<CollisionLine>,
+}
+
+impl CollisionPolyLine {
+    pub fn new(points: Vec<Point2D>) -> CollisionPolyLine {
+        let mut new_poly_line = CollisionPolyLine {
+            points,
+            lines: Vec::new(),
+        };
+        new_poly_line.create_lines_from_points();
+        new_poly_line
+    }
+
+    pub fn points(&self) -> &Vec<Point2D> { &self.points }
+    pub fn collision_lines(&self) -> &Vec<CollisionLine> { &self.lines }
+
+    fn create_lines_from_points(&mut self) {
+        self.lines.clear();
+        let num_points = self.points.len();
+        if num_points > 1 {
+            for i in 1..num_points {
+                let i_previous = i - 1;
+                let collision_line = CollisionLine::new(
+                    LineSegment2D::new(
+                        Point2D::new(self.points[i_previous].x(), self.points[i_previous].y()),
+                        Point2D::new(self.points[i].x(), self.points[i].y()),
+                    ),
+                );
+                self.lines.push(collision_line);
+            }
+        }
+    }
+}
