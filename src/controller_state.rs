@@ -1,10 +1,11 @@
-use crate::analog_stick::AnalogStick;
+use crate::analog_axis::{self, AnalogAxis};
 use crate::button::Button;
 
-#[derive(Copy, Clone)]
 pub struct ControllerState {
-    pub left_stick: AnalogStick,
-    pub c_stick: AnalogStick,
+    pub x_axis: AnalogAxis,
+    pub y_axis: AnalogAxis,
+    pub c_x_axis: AnalogAxis,
+    pub c_y_axis: AnalogAxis,
     pub a_button: Button,
     pub b_button: Button,
     pub x_button: Button,
@@ -20,28 +21,32 @@ pub struct ControllerState {
 }
 
 impl ControllerState {
-    pub fn new(dead_zone: f64) -> ControllerState {
-        ControllerState{
-            left_stick: AnalogStick::new(dead_zone),
-            c_stick: AnalogStick::new(dead_zone),
-            a_button: Button::new(),
-            b_button: Button::new(),
-            x_button: Button::new(),
-            y_button: Button::new(),
-            z_button: Button::new(),
-            r_button: Button::new(),
-            l_button: Button::new(),
-            start_button: Button::new(),
-            d_left_button: Button::new(),
-            d_right_button: Button::new(),
-            d_down_button: Button::new(),
-            d_up_button: Button::new()
+    pub fn default() -> ControllerState {
+        ControllerState {
+            x_axis: AnalogAxis::default(),
+            y_axis: AnalogAxis::default(),
+            c_x_axis: AnalogAxis::default(),
+            c_y_axis: AnalogAxis::default(),
+            a_button: Button::default(),
+            b_button: Button::default(),
+            x_button: Button::default(),
+            y_button: Button::default(),
+            z_button: Button::default(),
+            r_button: Button::default(),
+            l_button: Button::default(),
+            start_button: Button::default(),
+            d_left_button: Button::default(),
+            d_right_button: Button::default(),
+            d_down_button: Button::default(),
+            d_up_button: Button::default(),
         }
     }
 
     pub fn update(&mut self) {
-        self.left_stick.update();
-        self.c_stick.update();
+        self.x_axis.update();
+        self.y_axis.update();
+        self.c_x_axis.update();
+        self.c_y_axis.update();
         self.a_button.update();
         self.b_button.update();
         self.x_button.update();
@@ -57,26 +62,26 @@ impl ControllerState {
     }
 
     pub fn copy_inputs(&mut self, from_controller: &ControllerState) {
-        self.left_stick.x_axis.set_value(from_controller.left_stick.x_axis.value());
-        self.left_stick.y_axis.set_value(from_controller.left_stick.y_axis.value());
-        self.c_stick.x_axis.set_value(from_controller.c_stick.x_axis.value());
-        self.c_stick.y_axis.set_value(from_controller.c_stick.y_axis.value());
-        self.a_button.set_pressed(from_controller.a_button.is_pressed());
-        self.b_button.set_pressed(from_controller.b_button.is_pressed());
-        self.x_button.set_pressed(from_controller.x_button.is_pressed());
-        self.y_button.set_pressed(from_controller.y_button.is_pressed());
-        self.z_button.set_pressed(from_controller.z_button.is_pressed());
-        self.r_button.set_pressed(from_controller.r_button.is_pressed());
-        self.l_button.set_pressed(from_controller.l_button.is_pressed());
-        self.start_button.set_pressed(from_controller.start_button.is_pressed());
-        self.d_left_button.set_pressed(from_controller.d_left_button.is_pressed());
-        self.d_right_button.set_pressed(from_controller.d_right_button.is_pressed());
-        self.d_down_button.set_pressed(from_controller.d_down_button.is_pressed());
-        self.d_up_button.set_pressed(from_controller.d_up_button.is_pressed());
+        self.x_axis.value = from_controller.x_axis.value;
+        self.y_axis.value = from_controller.y_axis.value;
+        self.c_x_axis.value = from_controller.c_x_axis.value;
+        self.c_y_axis.value = from_controller.c_y_axis.value;
+        self.a_button.is_pressed = from_controller.a_button.is_pressed;
+        self.b_button.is_pressed = from_controller.b_button.is_pressed;
+        self.x_button.is_pressed = from_controller.x_button.is_pressed;
+        self.y_button.is_pressed = from_controller.y_button.is_pressed;
+        self.z_button.is_pressed = from_controller.z_button.is_pressed;
+        self.r_button.is_pressed = from_controller.r_button.is_pressed;
+        self.l_button.is_pressed = from_controller.l_button.is_pressed;
+        self.start_button.is_pressed = from_controller.start_button.is_pressed;
+        self.d_left_button.is_pressed = from_controller.d_left_button.is_pressed;
+        self.d_right_button.is_pressed = from_controller.d_right_button.is_pressed;
+        self.d_down_button.is_pressed = from_controller.d_down_button.is_pressed;
+        self.d_up_button.is_pressed = from_controller.d_up_button.is_pressed;
     }
 
     pub fn convert_to_melee_values(&mut self) {
-        self.left_stick.convert_to_melee_values();
-        self.c_stick.convert_to_melee_values();
+        analog_axis::convert_to_melee_values(&mut self.x_axis, &mut self.y_axis);
+        analog_axis::convert_to_melee_values(&mut self.c_x_axis, &mut self.c_y_axis);
     }
 }

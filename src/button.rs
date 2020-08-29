@@ -1,34 +1,25 @@
-#[derive(Copy, Clone)]
 pub struct Button {
-    state_current: bool,
-    state_previous: bool
+    pub is_pressed: bool,
+    pub was_previously_pressed: bool,
 }
 
 impl Button {
-    pub fn new() -> Button {
-        Button{
-            state_current: false,
-            state_previous: false
+    pub fn default() -> Button {
+        Button {
+            is_pressed: false,
+            was_previously_pressed: false,
         }
     }
 
-    pub fn set_pressed(&mut self, value: bool) {
-        self.state_current = value;
-    }
-
-    pub fn is_pressed(&self) -> bool {
-        self.state_current
-    }
-
     pub fn just_pressed(&self) -> bool {
-        self.state_current && !self.state_previous
+        self.is_pressed && !self.was_previously_pressed
     }
 
     pub fn just_released(&self) -> bool {
-        self.state_previous && !self.state_current
+        self.was_previously_pressed && !self.is_pressed
     }
 
     pub fn update(&mut self) {
-        self.state_previous = self.state_current;
+        self.was_previously_pressed = self.is_pressed;
     }
 }

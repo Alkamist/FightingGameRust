@@ -1,25 +1,33 @@
-#[derive(Copy, Clone)]
 pub struct Point {
     pub x: f64,
     pub y: f64,
 }
 
+impl Point {
+    pub fn default() -> Point {
+        Point {
+            x: 0.0,
+            y: 0.0,
+        }
+    }
+
+    pub fn triplet_orientation(&self, q: &Point, r: &Point) -> Orientation {
+        let value = (q.y - self.y) * (r.x - q.x) - (q.x - self.x) * (r.y - q.y);
+        if value == 0.0 {
+            Orientation::Colinear
+        }
+        else if value > 0.0 {
+            Orientation::Clockwise
+        }
+        else {
+            Orientation::CounterClockwise
+        }
+    }
+}
+
 #[derive(PartialEq)]
-pub enum PointOrientation {
+pub enum Orientation {
     Colinear,
     Clockwise,
     CounterClockwise,
-}
-
-pub fn triplet_point_orientation(p: Point, q: Point, r: Point) -> PointOrientation {
-    let value = (q.y - p.y) * (r.x - q.x) - (q.x - p.x) * (r.y - q.y);
-    if value == 0.0 {
-        PointOrientation::Colinear
-    }
-    else if value > 0.0 {
-        PointOrientation::Clockwise
-    }
-    else {
-        PointOrientation::CounterClockwise
-    }
 }
