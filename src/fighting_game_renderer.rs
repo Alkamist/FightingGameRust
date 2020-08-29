@@ -8,6 +8,7 @@ pub struct FightingGameRenderer {
     pub camera_zoom: f64,
     pub camera_x: f64,
     pub camera_y: f64,
+    pub middle_mouse_is_down: bool,
     pub glyphs: Glyphs,
 }
 
@@ -17,7 +18,42 @@ impl FightingGameRenderer {
             camera_zoom: 4.0,
             camera_x: 0.0,
             camera_y: 20.0,
+            middle_mouse_is_down: false,
             glyphs: window.load_font("C:/Windows/Fonts/consola.ttf").unwrap(),
+        }
+    }
+
+    pub fn handle_mouse_pan_and_zoom(&mut self, event: &Event) {
+        if let Some(args) = event.mouse_scroll_args() {
+            let scroll_direction = args[1];
+            self.camera_zoom += scroll_direction;
+            self.camera_zoom = self.camera_zoom.max(1.0);
+        }
+
+        if let Some(args) = event.button_args() {
+            match args.state {
+                ButtonState::Press => match args.button {
+                    Button::Mouse(button) => match button {
+                        MouseButton::Middle => self.middle_mouse_is_down = true,
+                        _ => ()
+                    },
+                    _ => ()
+                },
+                ButtonState::Release => match args.button {
+                    Button::Mouse(button) => match button {
+                        MouseButton::Middle => self.middle_mouse_is_down = false,
+                        _ => ()
+                    },
+                    _ => ()
+                }
+            }
+        }
+
+        if let Some(args) = event.mouse_relative_args() {
+            if self.middle_mouse_is_down {
+                self.camera_x += args[0] / self.camera_zoom;
+                self.camera_y += args[1] / self.camera_zoom;
+            }
         }
     }
 
