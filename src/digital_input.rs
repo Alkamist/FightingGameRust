@@ -40,7 +40,6 @@ impl DigitalInput {
     }
 
     pub fn update_controller_state(&self, controller_state: &mut ControllerState) {
-        controller_state.update();
         controller_state.x_axis.set_value_from_states(self.left, self.right);
         controller_state.y_axis.set_value_from_states(self.down, self.up);
         controller_state.x_button.is_pressed = self.x;

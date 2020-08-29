@@ -1,3 +1,5 @@
+use crate::general_math;
+
 pub struct Point {
     pub x: f64,
     pub y: f64,
@@ -21,6 +23,13 @@ impl Point {
         }
         else {
             Orientation::CounterClockwise
+        }
+    }
+
+    pub fn lerp(&self, other_point: &Point, interpolation: f64) -> Point {
+        Point {
+            x: general_math::lerp(self.x, other_point.x, interpolation),
+            y: general_math::lerp(self.y, other_point.y, interpolation),
         }
     }
 }

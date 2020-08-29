@@ -78,7 +78,7 @@ impl AnalogAxis {
 }
 
 pub fn convert_to_melee_values(x_axis: &mut AnalogAxis, y_axis: &mut AnalogAxis) {
-    let mut stick_vector = Vector { x: x_axis.value, y: x_axis.value };
+    let mut stick_vector = Vector { x: x_axis.value, y: y_axis.value };
     if stick_vector.magnitude() > 1.0 {
         fn convert_axis(axis: &mut AnalogAxis) {
             let axis_magnitude = axis.value.abs();

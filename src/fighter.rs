@@ -2,6 +2,7 @@ use crate::controller_state::ControllerState;
 use crate::analog_axis::AnalogAxis;
 use crate::point_math::Point;
 use crate::vector_math::Vector;
+use crate::ecb::ECB;
 
 pub struct Fighter {
     pub input: ControllerState,
@@ -49,6 +50,7 @@ pub struct Fighter {
     pub slow_dash_back_frames: u32,
     pub turn_frames: u32,
     pub run_brake_frames: u32,
+    pub ecb: ECB,
 }
 
 // Character builders.
@@ -59,7 +61,7 @@ impl Fighter {
             position: Point::default(),
             previous_position: Point::default(),
             velocity: Vector::default(),
-            air_jumps_left: 0,
+            air_jumps_left: 1,
             is_facing_right: true,
             was_facing_right: true,
             state: FighterState::Idle,
@@ -93,13 +95,19 @@ impl Fighter {
             fast_fall_velocity: 0.0,
             air_jump_velocity_multiplier: 0.0,
             air_jump_horizontal_axis_multiplier: 0.0,
-            air_jumps: 0,
+            air_jumps: 1,
             gravity: 0.0,
             dash_min_frames: 0,
             dash_max_frames: 0,
             slow_dash_back_frames: 0,
             turn_frames: 0,
             run_brake_frames: 0,
+            ecb: ECB {
+                bottom: Point { x: 0.0, y: 0.0 },
+                left: Point { x: -2.3, y: 6.0 },
+                top: Point { x: 0.0, y: 12.0 },
+                right: Point { x: 2.3, y: 6.0 },
+            }
         }
     }
 
@@ -223,6 +231,7 @@ impl Fighter {
     pub fn update(&mut self, input: &ControllerState) {
         self.input.update();
         self.input.copy_inputs(&input);
+        self.input.convert_to_melee_values();
 
         self.was_facing_right = self.is_facing_right;
         self.previous_position.x = self.position.x;
@@ -264,12 +273,12 @@ impl Fighter {
         //self.velocity.y = self.input.left_stick.y_axis.value;
         //self.move_with_velocity();
 
+        self.state_frame += 1;
+
         if self.position.y < 0.0 {
             self.position.y = 0.0;
             self.land();
         }
-
-        self.state_frame += 1;
     }
 
     fn handle_horizontal_air_movement(&mut self) {
@@ -298,7 +307,7 @@ impl Fighter {
 
     fn move_with_velocity(&mut self) {
         self.position.x += self.velocity.x;
-        self.position.x += self.velocity.y;
+        self.position.y += self.velocity.y;
     }
 
     fn apply_movement_friction(&mut self, friction: f64) {
@@ -745,8 +754,8 @@ impl Fighter {
         }
 
         if self.state_frame < 30 {
-            self.velocity.x += 0.9;
-            self.velocity.y += 0.9;
+            self.velocity.x *= 0.9;
+            self.velocity.y *= 0.9;
         }
         else {
             self.handle_horizontal_air_movement();
