@@ -34,7 +34,7 @@ fn main() {
 
     let mut digital_input = DigitalInput::default();
     let mut controller_state = ControllerState::default();
-    let mut fighting_game = FightingGame::new();
+    let mut fighting_game = FightingGame::default();
     let mut fighting_game_renderer = FightingGameRenderer::to_piston_window(&mut window);
     let mut fixed_timestep = FixedTimestep::with_fixed_fps(60.0);
 

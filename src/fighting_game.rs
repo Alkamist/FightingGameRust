@@ -1,3 +1,5 @@
+use crate::point_math::Point;
+use crate::line_math::PolyLine;
 use crate::controller_state::ControllerState;
 use crate::fighter::Fighter;
 
@@ -5,14 +7,49 @@ pub struct FightingGame {
     pub input: ControllerState,
     pub player: Fighter,
     pub is_paused: bool,
+    pub collision_poly_lines: Vec<PolyLine>,
 }
 
 impl FightingGame {
-    pub fn new() -> FightingGame {
+    pub fn default() -> FightingGame {
         FightingGame{
             input: ControllerState::default(),
             player: Fighter::fox(),
             is_paused: false,
+            collision_poly_lines: vec![
+                PolyLine::from_points(&vec![
+                    Point { x: -54.0, y: -100.0 },
+                    Point { x: -54.0, y: -47.0 },
+                    Point { x: -53.0, y: -46.0 },
+                    Point { x: -53.0, y: -31.0 },
+                    Point { x: -54.0, y: -30.0 },
+                    Point { x: -54.0, y: -28.0 },
+                    Point { x: -53.0, y: -27.0 },
+                    Point { x: -53.0, y: -12.0 },
+                    Point { x: -54.0, y: -11.0 },
+                    Point { x: -55.0, y: -8.0 },
+                    Point { x: -56.0, y: -7.0 },
+
+                    Point { x: -56.0, y: -3.5 },
+                    Point { x: -39.0, y: 0.0 },
+                    Point { x: 39.0, y: 0.0 },
+                    Point { x: 56.0, y: -3.5 },
+
+                    Point { x: 56.0, y: -7.0 },
+                    Point { x: 55.0, y: -8.0 },
+                    Point { x: 54.0, y: -11.0 },
+                    Point { x: 53.0, y: -12.0 },
+                    Point { x: 53.0, y: -27.0 },
+                    Point { x: 54.0, y: -28.0 },
+                    Point { x: 54.0, y: -30.0 },
+                    Point { x: 53.0, y: -31.0 },
+                    Point { x: 53.0, y: -46.0 },
+                    Point { x: 54.0, y: -47.0 },
+                    Point { x: 54.0, y: -100.0 },
+
+                    Point { x: -54.0, y: -100.0 },
+                ])
+            ],
         }
     }
 
@@ -36,86 +73,6 @@ impl FightingGame {
     }
 }
 
-//use crate::controller_state::ControllerState;
-//use crate::fighter::Fighter;
-//use crate::game_math::*;
-//use crate::collision::*;
-//
-//pub struct FightingGame {
-//    pub input: ControllerState,
-//    pub player: Fighter,
-//    collision_poly_lines: Vec<CollisionPolyLine>,
-//    is_paused: bool,
-//}
-//
-//impl FightingGame {
-//    pub fn new() -> FightingGame {
-//        FightingGame{
-//            input: ControllerState::new(0.2875),
-//            player: Fighter::fox(),
-//            is_paused: false,
-//            collision_poly_lines: vec![
-//                CollisionPolyLine::new(
-//                    vec![
-//                        Point2D::new(-54.0, -100.0),
-//                        Point2D::new(-54.0, -47.0),
-//                        Point2D::new(-53.0, -46.0),
-//                        Point2D::new(-53.0, -31.0),
-//                        Point2D::new(-54.0, -30.0),
-//                        Point2D::new(-54.0, -28.0),
-//                        Point2D::new(-53.0, -27.0),
-//                        Point2D::new(-53.0, -12.0),
-//                        Point2D::new(-54.0, -11.0),
-//                        Point2D::new(-55.0, -8.0),
-//                        Point2D::new(-56.0, -7.0),
-//
-//                        Point2D::new(-56.0, -3.5),
-//                        Point2D::new(-39.0, 0.0),
-//                        Point2D::new(39.0, 0.0),
-//                        Point2D::new(56.0, -3.5),
-//
-//                        Point2D::new(56.0, -7.0),
-//                        Point2D::new(55.0, -8.0),
-//                        Point2D::new(54.0, -11.0),
-//                        Point2D::new(53.0, -12.0),
-//                        Point2D::new(53.0, -27.0),
-//                        Point2D::new(54.0, -28.0),
-//                        Point2D::new(54.0, -30.0),
-//                        Point2D::new(53.0, -31.0),
-//                        Point2D::new(53.0, -46.0),
-//                        Point2D::new(54.0, -47.0),
-//                        Point2D::new(54.0, -100.0),
-//
-//                        Point2D::new(-54.0, -100.0),
-//                    ]
-//                ),
-//            ],
-//        }
-//    }
-//
-//    pub fn collision_poly_lines(&self) -> &Vec<CollisionPolyLine> { &self.collision_poly_lines }
-//
-//    pub fn update(&mut self, input: &ControllerState) {
-//        self.input.copy_inputs(input);
-//        self.input.convert_to_melee_values();
-//
-//        let mut frame_advance = false;
-//
-//        if self.input.start_button.just_pressed() {
-//            self.is_paused = !self.is_paused;
-//        }
-//        if self.is_paused && self.input.z_button.just_pressed() {
-//            frame_advance = true;
-//        }
-//
-//        if !self.is_paused || frame_advance {
-//            self.player.update(&self.input);
-//            self.resolve_collisions();
-//        }
-//
-//        self.input.update();
-//    }
-//
 //    fn resolve_collisions(&mut self) {
 //        for poly_line in &self.collision_poly_lines {
 //            let collision_lines = poly_line.collision_lines();

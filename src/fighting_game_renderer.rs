@@ -1,6 +1,7 @@
 use piston_window::*;
 
 use crate::general_math;
+use crate::line_math::PolyLine;
 use crate::fighter::Fighter;
 use crate::fighting_game::FightingGame;
 
@@ -76,7 +77,7 @@ impl FightingGameRenderer {
     ) {
         let interpolation = if game.is_paused { 1.0 } else { interpolation };
         clear([0.0, 0.0, 0.0, 1.0], graphics);
-        //self.draw_stage(context, graphics, window_width, window_height);
+        self.draw_collision_lines(context, graphics, &game.collision_poly_lines, window_width, window_height);
         self.draw_character(context, graphics, &game.player, window_width, window_height, interpolation);
         self.draw_debug_text(context, graphics, device, &game, window_width, window_height);
     }
@@ -186,46 +187,49 @@ impl FightingGameRenderer {
         self.glyphs.factory.encoder.flush(device);
     }
 
-//    fn draw_poly_line(
-//        &self,
-//        context: Context,
-//        graphics: &mut G2d,
-//        window_width: f64,
-//        window_height: f64,
-//        poly_line: &CollisionPolyLine,
-//    ) {
-//        let collision_lines = poly_line.collision_lines();
-//        for collision_line in collision_lines {
-//            let color = {
-//                if collision_line.is_ground() { [0.3, 0.3, 0.3, 1.0] }
-//                else { [0.9, 0.3, 0.3, 1.0] }
-//            };
-//
-//            let collision_line_segment = collision_line.line();
-//            line(
-//                color,
-//                1.0,
-//                [
-//                    self.to_screen_x(collision_line_segment.left_point().x(), window_width),
-//                    self.to_screen_y(collision_line_segment.left_point().y(), window_height),
-//                    self.to_screen_x(collision_line_segment.right_point().x(), window_width),
-//                    self.to_screen_y(collision_line_segment.right_point().y(), window_height),
-//                ],
-//                context.transform.trans(0.0, 0.0),
-//                graphics,
-//            );
-//        }
-//    }
-//
-//    fn draw_stage(
-//        &self,
-//        context: Context,
-//        graphics: &mut G2d,
-//        window_width: f64,
-//        window_height: f64,
-//    ) {
-//        for poly_line in self.fighting_game.collision_poly_lines() {
-//            self.draw_poly_line(context, graphics, window_width, window_height, &poly_line);
-//        }
-//    }
+    fn draw_poly_line(
+        &self,
+        context: Context,
+        graphics: &mut G2d,
+        window_width: f64,
+        window_height: f64,
+        poly_line: &PolyLine,
+    ) {
+        for line_segment in &poly_line.segments {
+            let color = {
+                //if collision_line.is_ground() { [0.3, 0.3, 0.3, 1.0] }
+                //else { [0.9, 0.3, 0.3, 1.0] }
+                [0.3, 0.3, 0.3, 1.0]
+            };
+
+            let left_point = line_segment.left_point();
+            let right_point = line_segment.right_point();
+
+            line(
+                color,
+                1.0,
+                [
+                    self.game_x_to_screen_x(left_point.x, window_width),
+                    self.game_y_to_screen_y(left_point.y, window_height),
+                    self.game_x_to_screen_x(right_point.x, window_width),
+                    self.game_y_to_screen_y(right_point.y, window_height),
+                ],
+                context.transform.trans(0.0, 0.0),
+                graphics,
+            );
+        }
+    }
+
+    fn draw_collision_lines(
+        &self,
+        context: Context,
+        graphics: &mut G2d,
+        collision_lines: &Vec<PolyLine>,
+        window_width: f64,
+        window_height: f64,
+    ) {
+        for poly_line in collision_lines {
+            self.draw_poly_line(context, graphics, window_width, window_height, &poly_line);
+        }
+    }
 }

@@ -236,3 +236,35 @@ impl LineSegment {
         None
     }
 }
+
+pub struct PolyLine {
+    pub segments: Vec<LineSegment>,
+}
+
+impl PolyLine {
+    pub fn from_points(points: &Vec<Point>) -> PolyLine {
+        let mut poly_line = PolyLine {
+            segments: Vec::new(),
+        };
+
+        let num_points = points.len();
+        if num_points > 1 {
+            for i in 1..num_points {
+                let previous_i = i - 1;
+                let segment = LineSegment {
+                    point_a: Point {
+                        x: points[previous_i].x,
+                        y: points[previous_i].y,
+                    },
+                    point_b: Point {
+                        x: points[i].x,
+                        y: points[i].y,
+                    },
+                };
+                poly_line.segments.push(segment);
+            }
+        }
+
+        poly_line
+    }
+}
