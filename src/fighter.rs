@@ -1,3 +1,5 @@
+use std::f64::consts::PI;
+
 use crate::controller_state::ControllerState;
 use crate::analog_axis::AnalogAxis;
 use crate::point_math::Point;
@@ -9,6 +11,7 @@ pub struct Fighter {
     pub position: Point,
     pub previous_position: Point,
     pub velocity: Vector,
+    pub rotation: f64,
     pub air_jumps_left: u32,
     pub is_facing_right: bool,
     pub was_facing_right: bool,
@@ -61,6 +64,7 @@ impl Fighter {
             position: Point::default(),
             previous_position: Point::default(),
             velocity: Vector::default(),
+            rotation: 0.0,
             air_jumps_left: 1,
             is_facing_right: true,
             was_facing_right: true,
@@ -269,24 +273,28 @@ impl Fighter {
             FighterState::LandSpecial => self.state_land_special_update(),
         }
 
-        //self.velocity.x = self.input.left_stick.x_axis.value;
-        //self.velocity.y = self.input.left_stick.y_axis.value;
+        //self.rotation = PI / 3.0;
+        //self.apply_rotated_horizontal_velocity_change(1.0 * self.input.x_axis.value);
+        //self.velocity.x = self.input.x_axis.value;
+        //self.velocity.y = self.input.y_axis.value;
         //self.move_with_velocity();
 
         self.state_frame += 1;
 
-        if self.position.y < 0.0 {
-            self.position.y = 0.0;
-            self.land();
-        }
+        //if self.position.y < 0.0 {
+        //    self.position.y = 0.0;
+        //    self.land();
+        //}
     }
 
     fn handle_horizontal_air_movement(&mut self) {
         if !self.input.x_axis.is_active() {
-            self.apply_movement_friction(self.air_friction);
+            self.velocity.x += self.calculate_friction_delta(self.velocity.x, self.air_friction);
         }
         else {
-            self.apply_movement_acceleration(
+            self.velocity.x += self.calculate_acceleration_delta(
+                self.velocity.x,
+                &self.input.x_axis,
                 self.air_base_acceleration,
                 self.air_axis_acceleration,
                 self.air_max_velocity,
@@ -310,32 +318,44 @@ impl Fighter {
         self.position.y += self.velocity.y;
     }
 
-    fn apply_movement_friction(&mut self, friction: f64) {
-        self.velocity.x = self.apply_friction_to_value(self.velocity.x, friction);
+    fn apply_rotated_horizontal_velocity_change(&mut self, velocity_change: f64) {
+        let mut velocity_change_vector = Vector {
+            x: velocity_change,
+            y: 0.0,
+        };
+        velocity_change_vector.rotate(self.rotation);
+        self.velocity.x += velocity_change_vector.x;
+        self.velocity.y += velocity_change_vector.y;
     }
 
-    fn apply_friction_to_value(&self, velocity: f64, friction: f64) -> f64 {
-        velocity - velocity.signum() * velocity.abs().min(friction)
+    fn apply_rotated_horizontal_friction(&mut self, friction: f64) {
+        self.apply_rotated_horizontal_velocity_change(self.calculate_friction_delta(self.velocity.x, friction));
     }
 
-    fn apply_movement_acceleration(
+    fn calculate_friction_delta(&self, velocity: f64, friction: f64) -> f64 {
+        -velocity.signum() * velocity.abs().min(friction)
+    }
+
+    fn apply_rotated_horizontal_acceleration(
         &mut self,
         base_acceleration: f64,
         axis_acceleration: f64,
         max_velocity: f64,
         friction: f64,
     ) {
-        self.velocity.x = self.apply_acceleration_to_value(
-            self.velocity.x,
-            &self.input.x_axis,
-            base_acceleration,
-            axis_acceleration,
-            max_velocity,
-            friction,
+        self.apply_rotated_horizontal_velocity_change(
+            self.calculate_acceleration_delta(
+                self.velocity.x,
+                &self.input.x_axis,
+                base_acceleration,
+                axis_acceleration,
+                max_velocity,
+                friction,
+            )
         );
     }
 
-    fn apply_acceleration_to_value(
+    fn calculate_acceleration_delta(
         &self,
         velocity: f64,
         axis: &AnalogAxis,
@@ -344,26 +364,25 @@ impl Fighter {
         max_velocity: f64,
         friction: f64
     ) -> f64 {
-        let mut new_velocity = velocity;
+        let mut acceleration_delta = 0.0;
 
         if velocity.abs() > max_velocity {
-            new_velocity = self.apply_friction_to_value(velocity, friction);
+            acceleration_delta += self.calculate_friction_delta(velocity, friction);
         }
 
-        let mut acceleration = axis.direction() * base_acceleration + axis.value * axis_acceleration;
+        acceleration_delta += axis.direction() * base_acceleration + axis.value * axis_acceleration;
+        let uncapped_velocity = velocity + acceleration_delta;
 
         if axis.value > 0.0 {
-            acceleration = acceleration.min(max_velocity - new_velocity);
-            acceleration = acceleration.max(0.0);
-            new_velocity += acceleration;
+            acceleration_delta = acceleration_delta.min(max_velocity - uncapped_velocity);
+            acceleration_delta = acceleration_delta.max(0.0);
         }
         else if axis.value < 0.0 {
-            acceleration = acceleration.max(-max_velocity - new_velocity);
-            acceleration = acceleration.min(0.0);
-            new_velocity += acceleration;
+            acceleration_delta = acceleration_delta.max(-max_velocity - uncapped_velocity);
+            acceleration_delta = acceleration_delta.min(0.0);
         }
 
-        new_velocity
+        acceleration_delta
     }
 }
 
@@ -405,7 +424,7 @@ impl Fighter {
     }
 
     fn state_idle_update(&mut self) {
-        self.apply_movement_friction(self.ground_friction);
+        self.apply_rotated_horizontal_friction(self.ground_friction);
         self.move_with_velocity();
     }
 }
@@ -434,7 +453,7 @@ impl Fighter {
             match self.previous_state {
                 FighterState::Dash => {
                     // I'm unsure where the 1.73 here comes from but it is necessary for now.
-                    self.velocity.x -= self.velocity.x.signum() * 1.73;
+                    self.apply_rotated_horizontal_velocity_change(-self.velocity.x.signum() * 1.73);
                 },
                 _ => ()
             }
@@ -443,7 +462,7 @@ impl Fighter {
         // Not quite right. Turn friction in melee applies on the first frame while walking,
         // but not during the one frame of turn seen while dash dancing. I need to implement that.
         if self.state_frame > 1 {
-            self.apply_movement_friction(2.0 * self.ground_friction);
+            self.apply_rotated_horizontal_friction(2.0 * self.ground_friction);
         }
         if self.x_axis_is_backward() && self.state_frame == self.slow_dash_back_frames {
             self.is_facing_right = self.input.x_axis.value >= 0.0;
@@ -470,26 +489,26 @@ impl Fighter {
     fn state_walk_update(&mut self) {
         if self.state_frame == 0 {
             if self.input.x_axis.is_active() {
-                self.velocity.x += self.facing_direction() * (0.1 + 0.2 * self.input.x_axis.value);
+                self.apply_rotated_horizontal_velocity_change(self.facing_direction() * (0.1 + 0.2 * self.input.x_axis.value));
             }
         }
 
         let target_velocity = self.walk_max_velocity * self.input.x_axis.value;
 
         if self.velocity.x.abs() > target_velocity.abs() {
-            self.apply_movement_friction(2.0 * self.ground_friction);
+            self.apply_rotated_horizontal_friction(2.0 * self.ground_friction);
         }
         else if self.input.x_axis.is_active() && self.state_frame >= 1 {
             // This isn't quite right but close-ish, not sure what the real acceleration calculation is.
             let acceleration = (target_velocity - self.velocity.x) * 0.25 * self.input.x_axis.value.abs();
 
-            self.velocity.x += acceleration;
+            self.apply_rotated_horizontal_velocity_change(acceleration);
 
             let going_left_too_fast = target_velocity < 0.0 && self.velocity.x < target_velocity;
             let going_right_too_fast = target_velocity > 0.0 && self.velocity.x > target_velocity;
 
             if going_left_too_fast || going_right_too_fast {
-                self.velocity.x = target_velocity;
+                self.apply_rotated_horizontal_velocity_change(target_velocity - self.velocity.x);
             }
         }
         self.move_with_velocity();
@@ -531,11 +550,11 @@ impl Fighter {
 
         if self.state_frame == 1 {
             if self.dash_should_reset_velocity {
-                self.velocity.x = 0.0;
+                self.apply_rotated_horizontal_velocity_change(-self.velocity.x);
                 self.dash_should_reset_velocity = false;
             }
 
-            self.velocity.x += self.dash_start_velocity * self.facing_direction();
+            self.apply_rotated_horizontal_velocity_change(self.dash_start_velocity * self.facing_direction());
             if self.velocity.x.abs() > self.dash_max_velocity {
                 self.velocity.x = self.dash_max_velocity * self.facing_direction();
             }
@@ -543,10 +562,10 @@ impl Fighter {
 
         if self.state_frame >= 1 {
             if !self.input.x_axis.is_active() {
-                self.apply_movement_friction(self.ground_friction);
+                self.apply_rotated_horizontal_friction(self.ground_friction);
             }
             else {
-                self.apply_movement_acceleration(
+                self.apply_rotated_horizontal_acceleration(
                     self.dash_base_acceleration,
                     self.dash_axis_acceleration,
                     self.dash_max_velocity,
@@ -576,7 +595,7 @@ impl Fighter {
         let run_acceleration = ((self.dash_max_velocity * self.input.x_axis.value) - self.velocity.x)
                              * (1.0 / (2.5 * self.dash_max_velocity))
                              * (self.dash_axis_acceleration + (self.dash_base_acceleration / self.input.x_axis.value.abs()));
-        self.velocity.x += run_acceleration;
+        self.apply_rotated_horizontal_velocity_change(run_acceleration);
         self.move_with_velocity();
     }
 }
@@ -602,7 +621,7 @@ impl Fighter {
     }
 
     fn state_run_brake_update(&mut self) {
-        self.apply_movement_friction(self.ground_friction);
+        self.apply_rotated_horizontal_friction(self.ground_friction);
         self.move_with_velocity();
     }
 }
@@ -648,10 +667,10 @@ impl Fighter {
         if !self.input.x_axis.is_active()
         || (!self.run_turn_has_fully_turned && self.x_axis_is_forward())
         || (self.run_turn_has_fully_turned && self.x_axis_is_backward()) {
-            self.apply_movement_friction(self.ground_friction);
+            self.apply_rotated_horizontal_friction(self.ground_friction);
         }
         else {
-            self.apply_movement_acceleration(
+            self.apply_rotated_horizontal_acceleration(
                 self.dash_base_acceleration,
                 self.dash_axis_acceleration,
                 self.dash_max_velocity,
@@ -680,7 +699,7 @@ impl Fighter {
     }
 
     fn state_jump_squat_update(&mut self) {
-        self.apply_movement_friction(2.0 * self.ground_friction);
+        self.apply_rotated_horizontal_friction(2.0 * self.ground_friction);
         self.move_with_velocity();
     }
 }
@@ -780,7 +799,7 @@ impl Fighter {
             self.air_jumps_left = self.air_jumps;
         }
 
-        self.apply_movement_friction(2.0 * self.ground_friction);
+        self.apply_rotated_horizontal_friction(2.0 * self.ground_friction);
         self.move_with_velocity();
     }
 }
@@ -818,7 +837,7 @@ impl Fighter {
         }
 
         let friction_multiplier = if self.state_frame < 3 { 2.0 } else { 1.0 };
-        self.apply_movement_friction(friction_multiplier * self.ground_friction);
+        self.apply_rotated_horizontal_friction(friction_multiplier * self.ground_friction);
         self.move_with_velocity();
     }
 }

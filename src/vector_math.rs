@@ -65,4 +65,22 @@ impl Vector {
             y: -self.y,
         }
     }
+
+    pub fn rotate(&mut self, rotation: f64) {
+        let rotation_cos = rotation.cos();
+        let rotation_sin = rotation.sin();
+        let new_x = self.x * rotation_cos - self.y * rotation_sin;
+        let new_y = self.x * rotation_sin + self.y * rotation_cos;
+        self.x = new_x;
+        self.y = new_y;
+    }
+
+    pub fn with_rotation(&self, rotation: f64) -> Vector {
+        let mut new_vector = Vector {
+            x: self.x,
+            y: self.y,
+        };
+        new_vector.rotate(rotation);
+        new_vector
+    }
 }

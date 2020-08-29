@@ -1,5 +1,6 @@
 use crate::point_math::Point;
-use crate::line_math::PolyLine;
+use crate::line_math::{PolyLine, LineSegment};
+use crate::vector_math::Vector;
 use crate::controller_state::ControllerState;
 use crate::fighter::Fighter;
 
@@ -69,33 +70,69 @@ impl FightingGame {
 
         if !self.is_paused || frame_advance {
             self.player.update(&self.input);
+            self.resolve_collisions();
+        }
+    }
+
+    fn resolve_collisions(&mut self) {
+        for poly_line in &self.collision_poly_lines {
+            for line_segment in &poly_line.segments {
+                // Ground collision.
+                let possible_collision = self.get_ground_line_collision_position(
+                    &self.player,
+                    line_segment,
+                );
+                if let Some(collision_position) = possible_collision {
+                    if self.player.can_land() && self.player.velocity.dot(&line_segment.normal()) <= 0.0 {
+                        self.player.position.x = collision_position.x;
+                        self.player.position.y = collision_position.y;
+                        self.player.rotation = line_segment.direction().angle();
+                        self.player.land();
+                    }
+                }
+            }
+        }
+    }
+
+    fn get_ground_line_collision_position(
+        &self,
+        player: &Fighter,
+        ground_line: &LineSegment,
+    ) -> Option<Point> {
+
+        let tolerance = 0.01;
+
+        let ecb_bottom_x_previous = player.ecb.bottom.x + player.previous_position.x;
+        let ecb_bottom_y_previous = player.ecb.bottom.y + player.previous_position.y;
+        let ecb_bottom_x = player.ecb.bottom.x + player.position.x;
+        let ecb_bottom_y = player.ecb.bottom.y + player.position.y;
+
+        let movement_vector = Vector {
+            x: ecb_bottom_x - ecb_bottom_x_previous,
+            y: ecb_bottom_y - ecb_bottom_y_previous,
+        };
+        let movement_vector_direction = movement_vector.direction();
+
+        // Extend the movement line backward by some tolerance to prevent,
+        // moving through obstacles.
+        let movement_line_start_point = Point {
+            x: ecb_bottom_x_previous - movement_vector_direction.x * tolerance,
+            y: ecb_bottom_y_previous - movement_vector_direction.y * tolerance,
+        };
+        let movement_line_end_point = Point {
+            x: ecb_bottom_x,
+            y: ecb_bottom_y,
+        };
+        let movement_line = LineSegment {
+            point_a: movement_line_start_point,
+            point_b: movement_line_end_point,
+        };
+
+        if movement_line.intersects_with(ground_line) {
+            movement_line.intersection_with(ground_line)
+        }
+        else {
+            None
         }
     }
 }
-
-//    fn resolve_collisions(&mut self) {
-//        for poly_line in &self.collision_poly_lines {
-//            let collision_lines = poly_line.collision_lines();
-//            for collision_line in collision_lines {
-//                let collision_line_segment = collision_line.line();
-//
-//                // Ground collision.
-//
-//                let possible_collision = self.player.ecb().get_ground_line_collision_position(
-//                    self.player.position_previous(),
-//                    self.player.position(),
-//                    collision_line_segment,
-//                );
-//                if let Some(collision_position) = possible_collision {
-//                    //if self.player.can_land() && self.player.velocity().dot(collision_line_segment.normal()) <= 0.0 {
-//                    if self.player.velocity().dot(collision_line_segment.normal()) <= 0.0 {
-//                        self.player.set_x(collision_position.x());
-//                        self.player.set_y(collision_position.y());
-//                        //self.player.set_ground_line(Some(ground_line));
-//                        //self.player.land();
-//                    }
-//                }
-//            }
-//        }
-//    }
-//}
