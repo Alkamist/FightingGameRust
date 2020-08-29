@@ -233,40 +233,40 @@ impl Fighter {
         self.position_previous = self.position;
 
         // Handle state transition.
-        match self.state {
-            FighterState::Idle => self.state_idle_transition(),
-            FighterState::Turn => self.state_turn_transition(),
-            FighterState::Walk => self.state_walk_transition(),
-            FighterState::Dash => self.state_dash_transition(),
-            FighterState::Run => self.state_run_transition(),
-            FighterState::RunBrake => self.state_run_brake_transition(),
-            FighterState::RunTurn => self.state_run_turn_transition(),
-            FighterState::JumpSquat => self.state_jump_squat_transition(),
-            FighterState::Airborne => self.state_airborne_transition(),
-            FighterState::AirDodge => self.state_air_dodge_transition(),
-            FighterState::Land => self.state_land_transition(),
-            FighterState::LandSpecial => self.state_land_special_transition(),
-        }
+        //match self.state {
+        //    FighterState::Idle => self.state_idle_transition(),
+        //    FighterState::Turn => self.state_turn_transition(),
+        //    FighterState::Walk => self.state_walk_transition(),
+        //    FighterState::Dash => self.state_dash_transition(),
+        //    FighterState::Run => self.state_run_transition(),
+        //    FighterState::RunBrake => self.state_run_brake_transition(),
+        //    FighterState::RunTurn => self.state_run_turn_transition(),
+        //    FighterState::JumpSquat => self.state_jump_squat_transition(),
+        //    FighterState::Airborne => self.state_airborne_transition(),
+        //    FighterState::AirDodge => self.state_air_dodge_transition(),
+        //    FighterState::Land => self.state_land_transition(),
+        //    FighterState::LandSpecial => self.state_land_special_transition(),
+        //}
 
         // Handle state update.
-        match self.state {
-            FighterState::Idle => self.state_idle_update(),
-            FighterState::Turn => self.state_turn_update(),
-            FighterState::Walk => self.state_walk_update(),
-            FighterState::Dash => self.state_dash_update(),
-            FighterState::Run => self.state_run_update(),
-            FighterState::RunBrake => self.state_run_brake_update(),
-            FighterState::RunTurn => self.state_run_turn_update(),
-            FighterState::JumpSquat => self.state_jump_squat_update(),
-            FighterState::Airborne => self.state_airborne_update(),
-            FighterState::AirDodge => self.state_air_dodge_update(),
-            FighterState::Land => self.state_land_update(),
-            FighterState::LandSpecial => self.state_land_special_update(),
-        }
+        //match self.state {
+        //    FighterState::Idle => self.state_idle_update(),
+        //    FighterState::Turn => self.state_turn_update(),
+        //    FighterState::Walk => self.state_walk_update(),
+        //    FighterState::Dash => self.state_dash_update(),
+        //    FighterState::Run => self.state_run_update(),
+        //    FighterState::RunBrake => self.state_run_brake_update(),
+        //    FighterState::RunTurn => self.state_run_turn_update(),
+        //    FighterState::JumpSquat => self.state_jump_squat_update(),
+        //    FighterState::Airborne => self.state_airborne_update(),
+        //    FighterState::AirDodge => self.state_air_dodge_update(),
+        //    FighterState::Land => self.state_land_update(),
+        //    FighterState::LandSpecial => self.state_land_special_update(),
+        //}
 
-        //self.x_velocity = self.input.left_stick.x_axis.value();
-        //self.y_velocity = self.input.left_stick.y_axis.value();
-        //self.move_with_velocity();
+        self.set_x_velocity(self.input.left_stick.x_axis.value());
+        self.set_y_velocity(self.input.left_stick.y_axis.value());
+        self.move_with_velocity();
 
         self.state_frame += 1;
         self.input.update();

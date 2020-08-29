@@ -83,17 +83,21 @@ impl FightingGame {
             let collision_lines = poly_line.collision_lines();
             for collision_line in collision_lines {
                 let collision_line_segment = collision_line.line();
+
+                // Ground collision.
+
                 let possible_collision = self.player.ecb().get_ground_line_collision_position(
                     self.player.position_previous(),
                     self.player.position(),
                     collision_line_segment,
                 );
                 if let Some(collision_position) = possible_collision {
-                    if self.player.can_land() && self.player.velocity().dot(collision_line_segment.bottom_normal()) > 0.0 {
+                    //if self.player.can_land() && self.player.velocity().dot(collision_line_segment.normal()) <= 0.0 {
+                    if self.player.velocity().dot(collision_line_segment.normal()) <= 0.0 {
                         self.player.set_x(collision_position.x());
                         self.player.set_y(collision_position.y());
                         //self.player.set_ground_line(Some(ground_line));
-                        self.player.land();
+                        //self.player.land();
                     }
                 }
             }

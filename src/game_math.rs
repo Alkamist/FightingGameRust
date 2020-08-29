@@ -35,21 +35,23 @@ pub enum PointOrientation {
 
 #[derive(Copy, Clone)]
 pub struct LineSegment2D {
-    order_is_correct: bool,
+    order_is_left_right: bool,
     points: [Point2D; 2],
     slope: f64,
     length: f64,
     y_intercept: f64,
+    direction: Vector2D,
 }
 
 impl LineSegment2D {
     pub fn new(point0: Point2D, point1: Point2D) -> LineSegment2D {
         let mut line = LineSegment2D {
-            order_is_correct: true,
+            order_is_left_right: true,
             points: [point0, point1],
             slope: 0.0,
             length: 0.0,
             y_intercept: 0.0,
+            direction: Vector2D::new(0.0, 0.0),
         };
         line.set(point0, point1);
         line
@@ -58,25 +60,48 @@ impl LineSegment2D {
     pub fn set(&mut self, point0: Point2D, point1: Point2D) {
         self.points[0] = point0;
         self.points[1] = point1;
-        self.order_is_correct = self.calculate_order_is_correct();
+        self.order_is_left_right = self.calculate_order_is_left_right();
         self.slope = self.calculate_slope();
         self.length = self.calculate_length();
         self.y_intercept = self.calculate_y_intercept();
+        self.direction = self.calculate_direction();
     }
 
-    pub fn left_point(&self) -> Point2D { self.points[if self.order_is_correct { 0 } else { 1 }] }
-    pub fn right_point(&self) -> Point2D { self.points[if self.order_is_correct { 1 } else { 0 }] }
+    pub fn point_a(&self) -> Point2D { self.points[0] }
+    pub fn point_b(&self) -> Point2D { self.points[1] }
+    pub fn left_point(&self) -> Point2D { self.points[if self.order_is_left_right { 0 } else { 1 }] }
+    pub fn right_point(&self) -> Point2D { self.points[if self.order_is_left_right { 1 } else { 0 }] }
 
     pub fn slope(&self) -> f64 { self.slope }
     pub fn y_intercept(&self) -> f64 { self.y_intercept }
     pub fn length(&self) -> f64 { self.length }
+
+    // This normal is the top normal if the line goes from left to right,
+    // but the bottom normal if the line goes from right to left.
+    pub fn normal(&self) -> Vector2D {
+        let point_a = self.point_a();
+        let point_b = self.point_b();
+        let length = self.length();
+        if length > 0.0 {
+            Vector2D::new(
+                (point_a.y - point_b.y) / length,
+                (point_b.x - point_a.x) / length,
+            )
+        }
+        else {
+            Vector2D::new(0.0, 0.0)
+        }
+    }
 
     pub fn top_normal(&self) -> Vector2D {
         let left_point = self.left_point();
         let right_point = self.right_point();
         let length = self.length();
         if length > 0.0 {
-            Vector2D::new((left_point.y - right_point.y) / length, (right_point.x - left_point.x) / length)
+            Vector2D::new(
+                (left_point.y - right_point.y) / length,
+                (right_point.x - left_point.x) / length,
+            )
         }
         else {
             Vector2D::new(0.0, 0.0)
@@ -88,7 +113,10 @@ impl LineSegment2D {
         let right_point = self.right_point();
         let length = self.length();
         if length > 0.0 {
-            Vector2D::new((right_point.y - left_point.y) / length, (left_point.x - right_point.x) / length)
+            Vector2D::new(
+                (right_point.y - left_point.y) / length,
+                (left_point.x - right_point.x) / length,
+            )
         }
         else {
             Vector2D::new(0.0, 0.0)
@@ -162,7 +190,22 @@ impl LineSegment2D {
         ((right_point.x - left_point.x).powi(2) + (right_point.y - left_point.y).powi(2)).sqrt()
     }
 
-    fn calculate_order_is_correct(&self) -> bool {
+    fn calculate_direction(&self) -> Vector2D {
+        let point_a = self.point_a();
+        let point_b = self.point_b();
+        let length = self.length();
+        if length > 0.0 {
+            Vector2D::new(
+                (point_b.x() - point_a.x()) / length,
+                (point_b.y() - point_a.y()) / length,
+            )
+        }
+        else {
+            Vector2D::new(0.0, 0.0)
+        }
+    }
+
+    fn calculate_order_is_left_right(&self) -> bool {
         if self.points[0].x() <=  self.points[1].x() { true }
         else { false }
     }
@@ -278,6 +321,10 @@ impl Vector2D {
 
     pub fn dot(&self, vector: Vector2D) -> f64 {
         self.x() * vector.x() + self.y() * vector.y()
+    }
+
+    pub fn inverse(&self) -> Vector2D {
+        Vector2D::new(-self.x, -self.y)
     }
 
     fn calculate_magnitude(&self) -> f64 { (self.x().powi(2) + self.y().powi(2)).sqrt() }
