@@ -7,8 +7,8 @@ pub struct FixedTimestep {
 }
 
 impl FixedTimestep {
-    pub fn with_fixed_fps(fixed_fps: f64) -> FixedTimestep {
-        FixedTimestep{
+    pub fn with_fixed_fps(fixed_fps: f64) -> Self {
+        Self{
             interpolation: 0.0,
             fixed_delta: Duration::from_secs_f64(1.0 / fixed_fps),
             accumulator: Duration::new(0, 0)

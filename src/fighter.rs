@@ -11,7 +11,7 @@ pub struct Fighter {
     pub position: Point,
     pub previous_position: Point,
     pub velocity: Vector,
-    pub rotation: f64,
+    pub ground_angle: f64,
     pub air_jumps_left: u32,
     pub is_facing_right: bool,
     pub was_facing_right: bool,
@@ -58,13 +58,13 @@ pub struct Fighter {
 
 // Character builders.
 impl Fighter {
-    pub fn default() -> Fighter {
-        Fighter {
+    pub fn default() -> Self {
+        Self {
             input: ControllerState::default(),
             position: Point::default(),
             previous_position: Point::default(),
             velocity: Vector::default(),
-            rotation: 0.0,
+            ground_angle: 0.0,
             air_jumps_left: 1,
             is_facing_right: true,
             was_facing_right: true,
@@ -115,8 +115,8 @@ impl Fighter {
         }
     }
 
-    pub fn fox() -> Fighter {
-        Fighter{
+    pub fn fox() -> Self {
+        Self{
             ground_friction: 0.08,
             dash_start_velocity: 1.9,
             dash_max_velocity: 2.2,
@@ -196,6 +196,7 @@ impl Fighter {
     }
 
     pub fn land(&mut self) {
+        self.air_jumps_left = self.air_jumps;
         match self.state {
             FighterState::Airborne => self.change_state(FighterState::Land),
             FighterState::AirDodge => self.change_state(FighterState::LandSpecial),
@@ -242,42 +243,40 @@ impl Fighter {
         self.previous_position.y = self.position.y;
 
         // Handle state transition.
-        match self.state {
-            FighterState::Idle => self.state_idle_transition(),
-            FighterState::Turn => self.state_turn_transition(),
-            FighterState::Walk => self.state_walk_transition(),
-            FighterState::Dash => self.state_dash_transition(),
-            FighterState::Run => self.state_run_transition(),
-            FighterState::RunBrake => self.state_run_brake_transition(),
-            FighterState::RunTurn => self.state_run_turn_transition(),
-            FighterState::JumpSquat => self.state_jump_squat_transition(),
-            FighterState::Airborne => self.state_airborne_transition(),
-            FighterState::AirDodge => self.state_air_dodge_transition(),
-            FighterState::Land => self.state_land_transition(),
-            FighterState::LandSpecial => self.state_land_special_transition(),
-        }
+        //match self.state {
+        //    FighterState::Idle => self.state_idle_transition(),
+        //    FighterState::Turn => self.state_turn_transition(),
+        //    FighterState::Walk => self.state_walk_transition(),
+        //    FighterState::Dash => self.state_dash_transition(),
+        //    FighterState::Run => self.state_run_transition(),
+        //    FighterState::RunBrake => self.state_run_brake_transition(),
+        //    FighterState::RunTurn => self.state_run_turn_transition(),
+        //    FighterState::JumpSquat => self.state_jump_squat_transition(),
+        //    FighterState::Airborne => self.state_airborne_transition(),
+        //    FighterState::AirDodge => self.state_air_dodge_transition(),
+        //    FighterState::Land => self.state_land_transition(),
+        //    FighterState::LandSpecial => self.state_land_special_transition(),
+        //}
 
         // Handle state update.
-        match self.state {
-            FighterState::Idle => self.state_idle_update(),
-            FighterState::Turn => self.state_turn_update(),
-            FighterState::Walk => self.state_walk_update(),
-            FighterState::Dash => self.state_dash_update(),
-            FighterState::Run => self.state_run_update(),
-            FighterState::RunBrake => self.state_run_brake_update(),
-            FighterState::RunTurn => self.state_run_turn_update(),
-            FighterState::JumpSquat => self.state_jump_squat_update(),
-            FighterState::Airborne => self.state_airborne_update(),
-            FighterState::AirDodge => self.state_air_dodge_update(),
-            FighterState::Land => self.state_land_update(),
-            FighterState::LandSpecial => self.state_land_special_update(),
-        }
+        //match self.state {
+        //    FighterState::Idle => self.state_idle_update(),
+        //    FighterState::Turn => self.state_turn_update(),
+        //    FighterState::Walk => self.state_walk_update(),
+        //    FighterState::Dash => self.state_dash_update(),
+        //    FighterState::Run => self.state_run_update(),
+        //    FighterState::RunBrake => self.state_run_brake_update(),
+        //    FighterState::RunTurn => self.state_run_turn_update(),
+        //    FighterState::JumpSquat => self.state_jump_squat_update(),
+        //    FighterState::Airborne => self.state_airborne_update(),
+        //    FighterState::AirDodge => self.state_air_dodge_update(),
+        //    FighterState::Land => self.state_land_update(),
+        //    FighterState::LandSpecial => self.state_land_special_update(),
+        //}
 
-        //self.rotation = PI / 3.0;
-        //self.apply_rotated_horizontal_velocity_change(1.0 * self.input.x_axis.value);
-        //self.velocity.x = self.input.x_axis.value;
-        //self.velocity.y = self.input.y_axis.value;
-        //self.move_with_velocity();
+        self.velocity.x += 0.05 * self.input.x_axis.value;
+        self.velocity.y += 0.05 * self.input.y_axis.value;
+        self.move_with_velocity();
 
         self.state_frame += 1;
 
@@ -323,7 +322,7 @@ impl Fighter {
             x: velocity_change,
             y: 0.0,
         };
-        velocity_change_vector.rotate(self.rotation);
+        velocity_change_vector.rotate(self.ground_angle);
         self.velocity.x += velocity_change_vector.x;
         self.velocity.y += velocity_change_vector.y;
     }
@@ -364,25 +363,17 @@ impl Fighter {
         max_velocity: f64,
         friction: f64
     ) -> f64 {
-        let mut acceleration_delta = 0.0;
 
-        if velocity.abs() > max_velocity {
-            acceleration_delta += self.calculate_friction_delta(velocity, friction);
+        let velocity_abs = velocity.abs();
+
+        if velocity_abs > max_velocity {
+            let max_friction_delta = (velocity_abs - max_velocity).min(friction);
+            return -velocity.signum() * max_friction_delta;
         }
 
-        acceleration_delta += axis.direction() * base_acceleration + axis.value * axis_acceleration;
-        let uncapped_velocity = velocity + acceleration_delta;
-
-        if axis.value > 0.0 {
-            acceleration_delta = acceleration_delta.min(max_velocity - uncapped_velocity);
-            acceleration_delta = acceleration_delta.max(0.0);
-        }
-        else if axis.value < 0.0 {
-            acceleration_delta = acceleration_delta.max(-max_velocity - uncapped_velocity);
-            acceleration_delta = acceleration_delta.min(0.0);
-        }
-
-        acceleration_delta
+        let max_acceleration = ((axis.direction() * max_velocity) - velocity).abs();
+        let acceleration_abs = (base_acceleration + axis.value.abs() * axis_acceleration).min(max_acceleration);
+        return axis.direction() * acceleration_abs;
     }
 }
 
@@ -424,7 +415,7 @@ impl Fighter {
     }
 
     fn state_idle_update(&mut self) {
-        self.apply_rotated_horizontal_friction(self.ground_friction);
+        //self.apply_rotated_horizontal_friction(self.ground_friction);
         self.move_with_velocity();
     }
 }
@@ -796,10 +787,16 @@ impl Fighter {
     fn state_land_update(&mut self) {
         if self.state_frame == 0 {
             self.velocity.y = 0.0;
-            self.air_jumps_left = self.air_jumps;
+            //let mut velocity_change_vector = Vector {
+            //    x: 0.0,
+            //    y: -self.velocity.y,
+            //};
+            //velocity_change_vector.rotate(self.ground_angle);
+            //self.velocity.x += velocity_change_vector.x;
+            //self.velocity.y += velocity_change_vector.y;
         }
 
-        self.apply_rotated_horizontal_friction(2.0 * self.ground_friction);
+        //self.apply_rotated_horizontal_friction(self.ground_friction);
         self.move_with_velocity();
     }
 }
@@ -833,7 +830,6 @@ impl Fighter {
     fn state_land_special_update(&mut self) {
         if self.state_frame == 0 {
             self.velocity.y = 0.0;
-            self.air_jumps_left = self.air_jumps;
         }
 
         let friction_multiplier = if self.state_frame < 3 { 2.0 } else { 1.0 };

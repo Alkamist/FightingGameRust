@@ -21,8 +21,8 @@ pub struct ControllerState {
 }
 
 impl ControllerState {
-    pub fn default() -> ControllerState {
-        ControllerState {
+    pub fn default() -> Self {
+        Self {
             x_axis: AnalogAxis::default(),
             y_axis: AnalogAxis::default(),
             c_x_axis: AnalogAxis::default(),
@@ -61,7 +61,7 @@ impl ControllerState {
         self.d_up_button.update();
     }
 
-    pub fn copy_inputs(&mut self, from_controller: &ControllerState) {
+    pub fn copy_inputs(&mut self, from_controller: &Self) {
         self.x_axis.value = from_controller.x_axis.value;
         self.y_axis.value = from_controller.y_axis.value;
         self.c_x_axis.value = from_controller.c_x_axis.value;

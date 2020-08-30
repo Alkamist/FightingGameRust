@@ -1,16 +1,23 @@
+//use std::ops::{
+//    Add, AddAssign,
+//    Sub, SubAssign,
+//    Mul, MulAssign,
+//    Div, DivAssign,
+//};
+
+#[derive(Clone)]
 pub struct Vector {
     pub x: f64,
     pub y: f64,
 }
 
 impl Vector {
-    pub fn default() -> Vector {
-        Vector {
+    pub fn default() -> Self {
+        Self {
             x: 0.0,
             y: 0.0,
         }
     }
-
 
     pub fn magnitude(&self) -> f64 {
         (self.x.powi(2) + self.y.powi(2)).sqrt()
@@ -25,11 +32,8 @@ impl Vector {
         }
     }
 
-    pub fn with_magnitude(&self, value: f64) -> Vector {
-        let mut new_vector = Vector {
-            x: self.x,
-            y: self.y,
-        };
+    pub fn with_magnitude(&self, value: f64) -> Self {
+        let mut new_vector = self.clone();
         new_vector.set_magnitude(value);
         new_vector
     }
@@ -43,14 +47,11 @@ impl Vector {
         }
     }
 
-    pub fn direction(&self) -> Vector {
-        Vector {
-            x: self.x,
-            y: self.y,
-        }.with_magnitude(1.0)
+    pub fn direction(&self) -> Self {
+        self.clone().with_magnitude(1.0)
     }
 
-    pub fn dot(&self, other_vector: &Vector) -> f64 {
+    pub fn dot(&self, other_vector: &Self) -> f64 {
         self.x * other_vector.x + self.y * other_vector.y
     }
 
@@ -59,8 +60,8 @@ impl Vector {
         self.y = -self.y;
     }
 
-    pub fn inverse(&self) -> Vector {
-        Vector{
+    pub fn inverse(&self) -> Self {
+        Self {
             x: -self.x,
             y: -self.y,
         }
@@ -76,11 +77,80 @@ impl Vector {
     }
 
     pub fn with_rotation(&self, rotation: f64) -> Vector {
-        let mut new_vector = Vector {
-            x: self.x,
-            y: self.y,
-        };
+        let mut new_vector = self.clone();
         new_vector.rotate(rotation);
         new_vector
     }
 }
+
+//impl Add for Vector {
+//    type Output = Self;
+//
+//    fn add(self, other: Self) -> Self {
+//        Self {
+//            x: self.x + other.x,
+//            y: self.y + other.y,
+//        }
+//    }
+//}
+//
+//impl AddAssign for Vector {
+//    fn add_assign(&mut self, other: Self) {
+//        self.x += other.x;
+//        self.y += other.y;
+//    }
+//}
+//
+//impl Sub for Vector {
+//    type Output = Self;
+//
+//    fn sub(self, other: Self) -> Self {
+//        Self {
+//            x: self.x - other.x,
+//            y: self.y - other.y,
+//        }
+//    }
+//}
+//
+//impl SubAssign for Vector {
+//    fn sub_assign(&mut self, other: Self) {
+//        self.x -= other.x;
+//        self.y -= other.y;
+//    }
+//}
+//
+//impl Mul for Vector {
+//    type Output = Self;
+//
+//    fn mul(self, other: Self) -> Self {
+//        Self {
+//            x: self.x * other.x,
+//            y: self.y * other.y,
+//        }
+//    }
+//}
+//
+//impl MulAssign for Vector {
+//    fn mul_assign(&mut self, other: Self) {
+//        self.x *= other.x;
+//        self.y *= other.y;
+//    }
+//}
+//
+//impl Div for Vector {
+//    type Output = Self;
+//
+//    fn div(self, other: Self) -> Self {
+//        Self {
+//            x: self.x / other.x,
+//            y: self.y / other.y,
+//        }
+//    }
+//}
+//
+//impl DivAssign for Vector {
+//    fn div_assign(&mut self, other: Self) {
+//        self.x /= other.x;
+//        self.y /= other.y;
+//    }
+//}

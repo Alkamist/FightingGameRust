@@ -4,8 +4,8 @@ pub struct Button {
 }
 
 impl Button {
-    pub fn default() -> Button {
-        Button {
+    pub fn default() -> Self {
+        Self {
             is_pressed: false,
             was_previously_pressed: false,
         }

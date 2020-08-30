@@ -1,19 +1,20 @@
 use crate::general_math;
 
+#[derive(Clone)]
 pub struct Point {
     pub x: f64,
     pub y: f64,
 }
 
 impl Point {
-    pub fn default() -> Point {
-        Point {
+    pub fn default() -> Self {
+        Self {
             x: 0.0,
             y: 0.0,
         }
     }
 
-    pub fn triplet_orientation(&self, q: &Point, r: &Point) -> Orientation {
+    pub fn triplet_orientation(&self, q: &Self, r: &Self) -> Orientation {
         let value = (q.y - self.y) * (r.x - q.x) - (q.x - self.x) * (r.y - q.y);
         if value == 0.0 {
             Orientation::Colinear
@@ -26,8 +27,8 @@ impl Point {
         }
     }
 
-    pub fn lerp(&self, other_point: &Point, interpolation: f64) -> Point {
-        Point {
+    pub fn lerp(&self, other_point: &Self, interpolation: f64) -> Self {
+        Self {
             x: general_math::lerp(self.x, other_point.x, interpolation),
             y: general_math::lerp(self.y, other_point.y, interpolation),
         }

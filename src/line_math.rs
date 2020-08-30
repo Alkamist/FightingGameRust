@@ -1,14 +1,15 @@
 use crate::point_math::{self, Point};
 use crate::vector_math::Vector;
 
+#[derive(Clone)]
 pub struct LineSegment {
     pub point_a: Point,
     pub point_b: Point,
 }
 
 impl LineSegment {
-    pub fn default() -> LineSegment {
-        LineSegment {
+    pub fn default() -> Self {
+        Self {
             point_a: Point::default(),
             point_b: Point::default(),
         }
@@ -38,7 +39,7 @@ impl LineSegment {
         (right_point.y - left_point.y) / (right_point.x - left_point.x)
     }
 
-    pub fn is_parallel_with(&self, other_line: &LineSegment) -> bool {
+    pub fn is_parallel_with(&self, other_line: &Self) -> bool {
         self.slope() == other_line.slope()
     }
 
@@ -103,7 +104,7 @@ impl LineSegment {
     }
 
     // https://www.geeksforgeeks.org/check-if-two-given-line-segments-intersect/
-    pub fn intersects_with(&self, other_line: &LineSegment) -> bool {
+    pub fn intersects_with(&self, other_line: &Self) -> bool {
         let line_a = self;
         let line_b = other_line;
 
@@ -136,7 +137,7 @@ impl LineSegment {
         }
     }
 
-    pub fn intersection_with(&self, other_line: &LineSegment) -> Option<Point> {
+    pub fn intersection_with(&self, other_line: &Self) -> Option<Point> {
         if let Some(intersection) = self.intersection_with_possible_nan(other_line) {
             if !intersection.x.is_nan() && !intersection.y.is_nan() {
                 return Some(intersection)
@@ -145,7 +146,7 @@ impl LineSegment {
         None
     }
 
-    fn intersection_with_possible_nan(&self, other_line: &LineSegment) -> Option<point_math::Point> {
+    fn intersection_with_possible_nan(&self, other_line: &Self) -> Option<point_math::Point> {
         let line_a = self;
         let line_b = other_line;
 
@@ -237,13 +238,14 @@ impl LineSegment {
     }
 }
 
+#[derive(Clone)]
 pub struct PolyLine {
     pub segments: Vec<LineSegment>,
 }
 
 impl PolyLine {
-    pub fn from_points(points: &Vec<Point>) -> PolyLine {
-        let mut poly_line = PolyLine {
+    pub fn from_points(points: &Vec<Point>) -> Self {
+        let mut poly_line = Self {
             segments: Vec::new(),
         };
 

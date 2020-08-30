@@ -10,8 +10,8 @@ pub struct AnalogAxis {
 }
 
 impl AnalogAxis {
-    pub fn default() -> AnalogAxis {
-        AnalogAxis {
+    pub fn default() -> Self {
+        Self {
             value: 0.0,
             previous_value: 0.0,
             dead_zone: 0.2875,

@@ -20,8 +20,8 @@ pub struct DigitalInput {
 }
 
 impl DigitalInput {
-    pub fn default() -> DigitalInput {
-        DigitalInput {
+    pub fn default() -> Self {
+        Self {
             left: false,
             right: false,
             down: false,
